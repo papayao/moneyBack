@@ -1,0 +1,27 @@
+{
+  "name": "SalaryTicker",
+  "appid": "__UNI__SALARYTICKER",
+  "description": "打工人实时资产与负债对冲时钟",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "app-plus": {
+    "usingComponents": true,
+    "nvueCompiler": "uni-app",
+    "compilerVersion": 3,
+    "splashscreen": {
+      "alwaysShowBeforeRender": true,
+      "waiting": true,
+      "autoclose": true,
+      "delay": 0
+    },
+    "modules": {}
+  },
+  "quickapp": {},
+  "h5": {
+    "title": "SalaryTicker",
+    "router": {
+      "mode": "hash"
+    }
+  }
+}

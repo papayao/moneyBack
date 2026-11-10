@@ -1,0 +1,57 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "打工时钟",
+        "navigationBarBackgroundColor": "#09090b",
+        "navigationBarTextStyle": "white",
+        "backgroundColor": "#09090b"
+      }
+    },
+    {
+      "path": "pages/liabilities/liabilities",
+      "style": {
+        "navigationBarTitleText": "负债清单",
+        "navigationBarBackgroundColor": "#09090b",
+        "navigationBarTextStyle": "white",
+        "backgroundColor": "#09090b"
+      }
+    },
+    {
+      "path": "pages/profile/profile",
+      "style": {
+        "navigationBarTitleText": "工时与薪资",
+        "navigationBarBackgroundColor": "#09090b",
+        "navigationBarTextStyle": "white",
+        "backgroundColor": "#09090b"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "SalaryTicker",
+    "navigationBarBackgroundColor": "#09090b",
+    "backgroundColor": "#09090b"
+  },
+  "tabBar": {
+    "color": "#71717a",
+    "selectedColor": "#f4f4f5",
+    "backgroundColor": "#09090b",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "时钟"
+      },
+      {
+        "pagePath": "pages/liabilities/liabilities",
+        "text": "负债"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "设置"
+      }
+    ]
+  }
+}
