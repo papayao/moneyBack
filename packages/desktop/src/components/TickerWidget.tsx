@@ -203,7 +203,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
             {/* Streaming Additional Items */}
             {(!snapshot.streamingIncomeItems || snapshot.streamingIncomeItems.length === 0) ? (
               <div className="py-8 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 rounded-sm">
-                暂无额外多元现金流，可在下方【额外与多元收入中心】添加
+                暂无额外现金流，可在下方【额外收入】添加
               </div>
             ) : (
               <div className="space-y-1.5 max-h-56 overflow-y-auto text-xs font-mono">

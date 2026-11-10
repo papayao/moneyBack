@@ -8,8 +8,24 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        mono: ['JetBrains Mono', 'Consolas', 'Fira Code', 'monospace'],
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: [
+          'Inter',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"PingFang SC"',
+          '"Hiragino Sans GB"',
+          '"Noto Sans SC"',
+          '"Microsoft YaHei"',
+          'sans-serif',
+        ],
+        mono: [
+          '"JetBrains Mono"',
+          '"Geist Mono"',
+          '"SF Mono"',
+          'Consolas',
+          'Menlo',
+          'monospace',
+        ],
       },
       borderRadius: {
         sm: '2px',

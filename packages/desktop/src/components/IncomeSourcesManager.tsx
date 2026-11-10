@@ -119,14 +119,11 @@ export const IncomeSourcesManager: React.FC<IncomeSourcesManagerProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-zinc-900">额外与多元收入中心</h3>
+            <h3 className="text-sm font-semibold text-zinc-900">额外收入</h3>
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-emerald-50 text-emerald-700 border border-emerald-200">
               流式月增: {isPrivacyMode ? '****' : `+¥${Math.round(totalMonthlyStreaming).toLocaleString()}`}
             </span>
           </div>
-          <p className="text-xs text-zinc-500 mt-0.5">
-            持续秒级现金流（配偶/房租/利息）与一次性年终奖（支持直接注入资产或年化分摊）
-          </p>
         </div>
 
         <button
@@ -158,7 +155,7 @@ export const IncomeSourcesManager: React.FC<IncomeSourcesManagerProps> = ({
               : 'text-zinc-600 hover:text-zinc-900'
           }`}
         >
-          年终奖 / 一次性到账 ({oneTimeList.length})
+          一次性奖金 ({oneTimeList.length})
         </button>
       </div>
 
@@ -183,8 +180,8 @@ export const IncomeSourcesManager: React.FC<IncomeSourcesManagerProps> = ({
                 }}
                 className="w-full bg-white border border-zinc-300 rounded-sm px-2 py-1 text-xs text-zinc-900 focus:outline-none focus:border-zinc-500"
               >
-                <option value="streaming">持续流式收入 (按秒计费)</option>
-                <option value="one_time">一次性奖金 / 年终奖 (单次到账)</option>
+                <option value="streaming">持续收入 (按秒计费)</option>
+                <option value="one_time">一次性奖金</option>
               </select>
             </div>
 
