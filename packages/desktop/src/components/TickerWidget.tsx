@@ -2,6 +2,7 @@ import React from 'react';
 import { TickerSnapshot, UserProfile } from '@salary-ticker/core';
 import { TrendingDown, TrendingUp, Target, Clock } from 'lucide-react';
 import { RollingNumber } from './RollingNumber';
+import { BackgroundBeamsWithCollision } from './ui/background-beams-with-collision';
 
 interface TickerWidgetProps {
   snapshot: TickerSnapshot;
@@ -30,8 +31,8 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Main Live Net Ticker Card */}
-      <div className="border border-zinc-800 bg-zinc-900/60 p-6 rounded-md relative overflow-hidden">
+      {/* Main Live Net Ticker Card with Collision Beams */}
+      <BackgroundBeamsWithCollision isPositive={snapshot.isNetPositive} className="p-6">
         <div className="flex items-center justify-between text-xs text-zinc-400 mb-2">
           <span className="uppercase tracking-wider font-medium">今日净收入 (扣除日均负债)</span>
           <span className="font-mono text-zinc-400">
@@ -79,7 +80,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </BackgroundBeamsWithCollision>
 
       {/* Target Savings Progress Card */}
       <div className="border border-zinc-800 bg-zinc-900/40 p-4 rounded-md">
