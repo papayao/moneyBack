@@ -90,11 +90,11 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Main Live Net Ticker Card with Collision Beams & Multi-source Streaming List */}
+      {/* Main Live Net Ticker Card with Collision Beams & Separated Main Salary vs Passive Flows */}
       <BackgroundBeamsWithCollision isPositive={snapshot.isNetPositive} className="p-5 md:p-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full items-start">
-          {/* Left Column: Hero Net Ticker */}
-          <div className="lg:col-span-7 flex flex-col justify-between">
+          {/* Left Column: Hero Net Ticker & Isolated Labor Salary Block */}
+          <div className="lg:col-span-6 flex flex-col justify-between space-y-4">
             <div>
               <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
                 <span className="uppercase tracking-wider font-medium">今日净收入 (扣除日均负债)</span>
@@ -105,7 +105,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                 </span>
               </div>
 
-              <div className="flex items-baseline gap-3 my-2">
+              <div className="flex items-baseline gap-3 my-1">
                 <RollingNumber
                   value={formatMoney(snapshot.netToday, true)}
                   className={`text-4xl md:text-5xl font-bold ${
@@ -114,31 +114,70 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                 />
               </div>
 
-              <div className="text-xs text-zinc-500 font-mono mt-1">
+              <div className="text-xs text-zinc-500 font-mono">
                 {snapshot.isNetPositive ? '已实现今日净盈余' : '正在对冲今日硬性负债'}
               </div>
             </div>
 
-            {/* Breakdown Row */}
-            <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-zinc-100">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-sm bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
-                  <TrendingUp className="w-3.5 h-3.5" />
+            {/* Isolated Labor Salary Unit (单独提出来的主业工薪) */}
+            <div className="bg-white/90 border border-zinc-200/90 rounded-sm p-3 space-y-2">
+              <div className="flex items-center justify-between text-[11px] pb-1.5 border-b border-zinc-100">
+                <div className="flex items-center gap-1.5 font-semibold text-zinc-900">
+                  <Briefcase className="w-3.5 h-3.5 text-zinc-700" />
+                  <span>主业劳动工薪 (独立核算)</span>
                 </div>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-zinc-100 text-zinc-600 border border-zinc-200">
+                  {profile.workDaysPerMonth}天/月 · 仅工时计费
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-[11px] text-zinc-500">今日总收益</div>
+                  <div className="text-xs text-zinc-500">
+                    时薪 <strong className="text-zinc-800 font-mono">¥{snapshot.salaryPerHour}</strong> 元/时
+                    <span className="text-zinc-400 text-[10px] ml-1">(+¥{snapshot.salaryPerSecond.toFixed(3)}/秒)</span>
+                  </div>
+                  <div className="text-[11px] text-zinc-400 mt-0.5">
+                    月薪基准: ¥{profile.monthlySalary.toLocaleString()}
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <div className="text-[10px] text-zinc-400">今日打工入账</div>
+                  <div className="text-sm font-bold font-mono text-emerald-700">
+                    <RollingNumber value={formatMoney(snapshot.mainLaborEarnedToday)} />
+                  </div>
+                  <span
+                    className={`text-[10px] px-1 py-0.2 rounded-sm inline-block mt-0.5 font-sans ${
+                      snapshot.isWorkingTime
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : snapshot.isLunchBreak
+                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                        : 'bg-zinc-100 text-zinc-500'
+                    }`}
+                  >
+                    {snapshot.isWorkingTime ? '工作中计费中' : snapshot.isLunchBreak ? '午休摸鱼暂停' : '已下班暂停'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Today's Net Balance Breakdown */}
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-zinc-100 text-xs">
+              <div className="flex items-center gap-2 p-1.5 bg-zinc-50/70 rounded-sm border border-zinc-200/60">
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <div>
+                  <div className="text-[10px] text-zinc-400">今日全部总收益</div>
                   <div className="text-xs font-semibold font-mono text-zinc-800">
                     <RollingNumber value={formatMoney(snapshot.earnedToday)} />
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-sm bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
-                  <TrendingDown className="w-3.5 h-3.5" />
-                </div>
+              <div className="flex items-center gap-2 p-1.5 bg-zinc-50/70 rounded-sm border border-zinc-200/60">
+                <TrendingDown className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                 <div>
-                  <div className="text-[11px] text-zinc-500">今日负债均摊</div>
+                  <div className="text-[10px] text-zinc-400">今日负债摊销</div>
                   <div className="text-xs font-semibold font-mono text-zinc-800">
                     <RollingNumber value={formatMoney(snapshot.dailyDebtCost)} />
                   </div>
@@ -147,62 +186,64 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
             </div>
           </div>
 
-          {/* Right Column: Multi-Source Streaming Income (按秒计费列表) */}
-          <div className="lg:col-span-5 bg-zinc-50/90 border border-zinc-200/90 rounded-sm p-3 space-y-2">
+          {/* Right Column: Passive & Family Additional Streams (24/7 全天候与多元流) */}
+          <div className="lg:col-span-6 bg-zinc-50/90 border border-zinc-200/90 rounded-sm p-3 space-y-2.5">
             <div className="flex items-center justify-between text-[11px] border-b border-zinc-200/60 pb-1.5">
-              <span className="font-semibold text-zinc-800">多元流式收入 (按秒持续计费)</span>
-              <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded-sm border border-emerald-200">
-                {(snapshot.streamingIncomeItems?.length || 0) + 1} 个实时来源
+              <div>
+                <span className="font-semibold text-zinc-800">被动与多元现金流 (自然日持续进账)</span>
+                <p className="text-[10px] text-zinc-400 font-sans mt-0.5">
+                  房租、利息 24/7 自然日持续躺赚；配偶与奖金协同进账
+                </p>
+              </div>
+              <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-sm border border-emerald-200 shrink-0">
+                {snapshot.streamingIncomeItems?.length || 0} 个额外源
               </span>
             </div>
 
-            <div className="space-y-1.5 max-h-48 overflow-y-auto text-xs font-mono">
-              {/* Main Salary Item */}
-              <div className="flex items-center justify-between p-1.5 bg-white border border-zinc-200/80 rounded-sm">
-                <div>
-                  <div className="text-[11px] font-sans font-medium text-zinc-800 flex items-center gap-1">
-                    <span>主业工薪</span>
-                    <span className="text-[10px] text-zinc-400">¥{profile.monthlySalary.toLocaleString()}/月</span>
-                  </div>
-                  <div className="text-[10px] text-zinc-500">今日已计: +¥{(snapshot.hoursWorkedToday * snapshot.salaryPerSecond * 3600).toFixed(2)}</div>
-                </div>
-                <div className="text-right">
-                  <span className="text-emerald-700 font-semibold text-xs">
-                    +¥{snapshot.salaryPerSecond.toFixed(3)}
-                  </span>
-                  <span className="text-[10px] text-zinc-400 block font-sans">/秒</span>
-                </div>
+            {/* Streaming Additional Items */}
+            {(!snapshot.streamingIncomeItems || snapshot.streamingIncomeItems.length === 0) ? (
+              <div className="py-8 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 rounded-sm">
+                暂无额外多元现金流，可在下方【额外与多元收入中心】添加
               </div>
-
-              {/* Streaming Additional Items (Spouse, Rent, Interest, Side Hustle) */}
-              {snapshot.streamingIncomeItems?.map(item => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between p-1.5 bg-white border border-zinc-200/80 rounded-sm"
-                >
-                  <div className="truncate max-w-[140px]">
-                    <div className="text-[11px] font-sans font-medium text-zinc-800 truncate" title={item.title}>
-                      {item.title}
+            ) : (
+              <div className="space-y-1.5 max-h-56 overflow-y-auto text-xs font-mono">
+                {snapshot.streamingIncomeItems.map(item => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-2 bg-white border border-zinc-200/80 rounded-sm"
+                  >
+                    <div className="truncate max-w-[170px]">
+                      <div className="text-[11px] font-sans font-medium text-zinc-800 truncate flex items-center gap-1.5">
+                        <span title={item.title}>{item.title}</span>
+                        <span className="text-[9px] px-1 py-0.2 rounded-sm bg-zinc-100 text-zinc-500 font-mono">
+                          {item.is24x7 ? '24/7 全天' : '工作时段'}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                        今日已入: <strong className="text-zinc-600">+¥{item.todayEarned.toFixed(2)}</strong>
+                      </div>
                     </div>
-                    <div className="text-[10px] text-zinc-500">今日已计: +¥{item.todayEarned.toFixed(2)}</div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-emerald-700 font-semibold text-xs">
-                      +¥{item.ratePerSecond.toFixed(3)}
-                    </span>
-                    <span className="text-[10px] text-zinc-400 block font-sans">/秒</span>
-                  </div>
-                </div>
-              ))}
-            </div>
 
-            {/* One-time windfall notice if present */}
-            {snapshot.oneTimeIncomes && snapshot.oneTimeIncomes.length > 0 && (
-              <div className="text-[10px] text-zinc-500 bg-amber-50/70 border border-amber-200 p-1.5 rounded-sm flex items-center justify-between">
-                <span>包含 {snapshot.oneTimeIncomes.length} 笔年终奖/项目奖金项</span>
-                <span className="text-amber-800 font-sans">可在下方管理注入</span>
+                    <div className="text-right shrink-0">
+                      <span className="text-emerald-700 font-semibold text-xs">
+                        +¥{item.ratePerSecond.toFixed(4)}
+                      </span>
+                      <span className="text-[10px] text-zinc-400 block font-sans">
+                        /秒 · ¥{item.amount.toLocaleString()}/{item.frequency === 'annual' ? '年' : '月'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
+
+            {/* Bottom summary banner */}
+            <div className="flex items-center justify-between text-[11px] bg-white p-2 rounded-sm border border-zinc-200/70 text-zinc-600">
+              <span>今日多元额外入账合计:</span>
+              <span className="font-semibold font-mono text-emerald-700">
+                +¥{snapshot.additionalIncomeToday.toFixed(2)}
+              </span>
+            </div>
           </div>
         </div>
       </BackgroundBeamsWithCollision>

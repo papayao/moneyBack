@@ -41,6 +41,7 @@ export interface StreamingIncomeItem {
   type: string;
   amount: number;
   frequency: string;
+  is24x7: boolean;       // 是否 24/7 自然日持续进账 (房租、利息)
   ratePerSecond: number; // 元/秒
   ratePerHour: number;   // 元/小时
   todayEarned: number;   // 今日累计赚取 (元)
@@ -74,6 +75,9 @@ export interface TickerSnapshot {
   todayDebtRemainingLive: number;
   hoursToDebtFree: number;
   yearsToDebtFree: number;
+  // Main labor earnings (工作日工薪独立核算)
+  mainLaborEarnedToday: number;
+  salaryPerHour: number;
   // Custom Income Sources (多元收入: 配偶/房租/利息/副业)
   additionalIncomeMonthly: number;
   additionalIncomeToday: number;

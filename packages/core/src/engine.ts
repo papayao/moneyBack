@@ -108,48 +108,76 @@ export function calculateTickerSnapshot(
   transactions: Transaction[] = [],
   incomeSources: IncomeSource[] = []
 ): TickerSnapshot {
+  // 1. 主业工薪：严格按工作日与工作时段计费
   const salaryPerSec = calculateSalaryPerSecond(profile);
+  const salaryPerHour = Math.round(salaryPerSec * 3600 * 10) / 10;
   const dailyWorkSeconds = calculateDailyWorkingSeconds(profile);
   const totalMonthlySeconds = profile.workDaysPerMonth * dailyWorkSeconds;
 
-  // Additional income (多元自定义收入: 配偶工资 / 房租 / 利息 / 副业)
-  const additionalIncomeMonthly = calculateAdditionalMonthlyIncome(incomeSources);
-  const totalMonthlyIncome = profile.monthlySalary + additionalIncomeMonthly;
-  const additionalPerSecond =
-    totalMonthlySeconds > 0 ? additionalIncomeMonthly / totalMonthlySeconds : 0;
-  const totalIncomePerSecond = salaryPerSec + additionalPerSecond;
-
-  const dailyDebt = calculateDailyDebtCost(liabilities, profile.workDaysPerMonth);
   const { workedSeconds, isWorkingTime, isLunchBreak } = calculateWorkedSecondsToday(profile, now);
+  const mainLaborEarnedToday = workedSeconds * salaryPerSec;
 
-  const additionalIncomeToday = workedSeconds * additionalPerSecond;
-  const earnedToday = workedSeconds * totalIncomePerSecond;
-  const netToday = earnedToday - dailyDebt;
+  // 2. 被动与额外多元收益：24/7 自然日持续进账 vs 工作日多元进账
+  const secondsElapsedToday = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+  const naturalMonthlySeconds = 30 * 86400; // 30天全天候
 
-  // Streaming items list (按秒计费的各项明细：配偶、房租、利息等)
   const streamingSources = incomeSources.filter(
     s =>
       (s.status ?? 'active') === 'active' &&
       ((s.mode ?? 'streaming') === 'streaming' || s.isAmortized)
   );
+
+  let totalAdditionalToday = 0;
+  let totalAdditionalPerSecond = 0;
+
   const streamingIncomeItems: StreamingIncomeItem[] = streamingSources.map((s, idx) => {
+    const is24x7 = s.type === 'rent' || s.type === 'interest';
     const monthly = s.frequency === 'annual' ? (s.amount || 0) / 12 : (s.amount || 0);
-    const ratePerSecond = totalMonthlySeconds > 0 ? monthly / totalMonthlySeconds : 0;
+
+    let ratePerSecond = 0;
+    let todayEarned = 0;
+
+    if (is24x7) {
+      // 24/7 自然日全天候产生（睡觉休息也在进账）
+      ratePerSecond = monthly / naturalMonthlySeconds;
+      todayEarned = secondsElapsedToday * ratePerSecond;
+    } else {
+      // 工作日/工作时段计费（如配偶工资或年化奖金）
+      ratePerSecond = totalMonthlySeconds > 0 ? monthly / totalMonthlySeconds : 0;
+      todayEarned = workedSeconds * ratePerSecond;
+    }
+
+    totalAdditionalPerSecond += ratePerSecond;
+    totalAdditionalToday += todayEarned;
+
     return {
       id: s.id ?? idx + 100,
       title: s.title,
       type: s.type,
       amount: s.amount,
       frequency: s.frequency ?? 'monthly',
+      is24x7,
       ratePerSecond,
       ratePerHour: Math.round(ratePerSecond * 3600 * 100) / 100,
-      todayEarned: Math.round(workedSeconds * ratePerSecond * 100) / 100,
+      todayEarned: Math.round(todayEarned * 100) / 100,
     };
   });
 
   const oneTimeIncomes = incomeSources.filter(
     s => s.mode === 'one_time' && !s.isAmortized
   );
+
+  const additionalIncomeMonthly = calculateAdditionalMonthlyIncome(incomeSources);
+  const totalMonthlyIncome = profile.monthlySalary + additionalIncomeMonthly;
+
+  // 综合秒级产出速率（工作时间内：工薪 + 多元；非工作时间：全天候被动产出）
+  const totalIncomePerSecond = isWorkingTime
+    ? salaryPerSec + totalAdditionalPerSecond
+    : totalAdditionalPerSecond;
+
+  const earnedToday = mainLaborEarnedToday + totalAdditionalToday;
+  const dailyDebt = calculateDailyDebtCost(liabilities, profile.workDaysPerMonth);
+  const netToday = earnedToday - dailyDebt;
 
   // Savings target hours and minutes (accelerated by total income)
   const remainingSavings = Math.max(0, profile.targetSavings - profile.currentSavings);
@@ -195,6 +223,8 @@ export function calculateTickerSnapshot(
 
   return {
     earnedToday: Math.round(earnedToday * 100) / 100,
+    mainLaborEarnedToday: Math.round(mainLaborEarnedToday * 100) / 100,
+    salaryPerHour,
     dailyDebtCost: Math.round(dailyDebt * 100) / 100,
     netToday: Math.round(netToday * 100) / 100,
     isNetPositive: netToday >= 0,
@@ -202,7 +232,7 @@ export function calculateTickerSnapshot(
     totalIncomePerSecond,
     totalMonthlyIncome,
     additionalIncomeMonthly: Math.round(additionalIncomeMonthly * 100) / 100,
-    additionalIncomeToday: Math.round(additionalIncomeToday * 100) / 100,
+    additionalIncomeToday: Math.round(totalAdditionalToday * 100) / 100,
     streamingIncomeItems,
     oneTimeIncomes,
     hoursWorkedToday: Math.round((workedSeconds / 3600) * 100) / 100,
