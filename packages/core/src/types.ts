@@ -8,6 +8,8 @@ export interface UserProfile {
   lunchEndTime: string;  // "13:30"
   targetSavings: number;
   currentSavings: number;
+  baseLaborEarnings?: number; // 历史累计劳动所得基准值 (默认 500,000)
+  baseLivingExpense?: number; // 历史累计生活开销基准值
 }
 
 export interface Liability {
@@ -49,6 +51,10 @@ export interface TickerSnapshot {
   todayDebtRemainingLive: number;
   hoursToDebtFree: number;
   yearsToDebtFree: number;
+  // Lifetime totals
+  totalLaborEarningsLive: number;
+  totalExpensesLive: number; // 生活消费 + 负债支出
+  totalLivingExpenses: number;
   isWorkingTime: boolean;
   isLunchBreak: boolean;
 }

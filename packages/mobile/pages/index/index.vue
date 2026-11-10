@@ -43,6 +43,24 @@
       </view>
     </view>
 
+    <!-- Lifetime Totals (总劳动所得 & 累计总花费含负债) -->
+    <view class="stats-grid">
+      <view class="stat-card" @click="promptEditLaborEarnings">
+        <text class="stat-title">总劳动所得 (点此修改)</text>
+        <text class="stat-value mono-num text-positive">
+          {{ isPrivacy ? '****' : '¥' + (snapshot.totalLaborEarningsLive ? snapshot.totalLaborEarningsLive.toFixed(2) : '0.00') }}
+        </text>
+        <text class="stat-sub mono-num">含今日已赚 +¥{{ snapshot.earnedToday.toFixed(2) }}</text>
+      </view>
+      <view class="stat-card">
+        <text class="stat-title">总花费 (含负债)</text>
+        <text class="stat-value mono-num text-debt">
+          {{ isPrivacy ? '****' : '¥' + (snapshot.totalExpensesLive ? snapshot.totalExpensesLive.toFixed(2) : '0.00') }}
+        </text>
+        <text class="stat-sub mono-num">生活 ¥{{ (snapshot.totalLivingExpenses || 0).toFixed(0) }} + 负债 ¥{{ (snapshot.totalDebt || 0).toFixed(0) }}</text>
+      </view>
+    </view>
+
     <!-- Debt Payoff Progress Bar (负债消减进度) -->
     <view v-if="snapshot.totalDebt > 0" class="savings-card debt-card">
       <view class="savings-header">
@@ -101,6 +119,7 @@ export default {
         lunchEndTime: '13:30',
         targetSavings: 100000,
         currentSavings: 35000,
+        baseLaborEarnings: 500000,
       },
       liabilities: [
         {
@@ -216,6 +235,24 @@ export default {
             const val = parseFloat(res.content);
             if (!isNaN(val)) {
               this.profile.targetSavings = val;
+              uni.setStorageSync('st_profile', JSON.stringify(this.profile));
+              this.tick();
+            }
+          }
+        },
+      });
+    },
+    promptEditLaborEarnings() {
+      uni.showModal({
+        title: '修改累计总劳动所得基准',
+        editable: true,
+        placeholderText: '请输入工作以来累计总劳动所得 (元)',
+        content: String(this.profile.baseLaborEarnings || 500000),
+        success: (res) => {
+          if (res.confirm && res.content) {
+            const val = parseFloat(res.content);
+            if (!isNaN(val)) {
+              this.profile.baseLaborEarnings = val;
               uni.setStorageSync('st_profile', JSON.stringify(this.profile));
               this.tick();
             }
@@ -359,6 +396,13 @@ export default {
   font-size: 32rpx;
   font-weight: bold;
   display: block;
+}
+
+.stat-sub {
+  font-size: 20rpx;
+  color: #a1a1aa;
+  display: block;
+  margin-top: 6rpx;
 }
 
 .savings-card {

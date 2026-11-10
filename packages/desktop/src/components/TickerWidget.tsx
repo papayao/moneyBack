@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
 import { TickerSnapshot, UserProfile } from '@salary-ticker/core';
-import { TrendingDown, TrendingUp, Target, Clock, ShieldAlert, Edit2, Check } from 'lucide-react';
+import {
+  TrendingDown,
+  TrendingUp,
+  Target,
+  Clock,
+  ShieldAlert,
+  Edit2,
+  Check,
+  Briefcase,
+  Receipt,
+} from 'lucide-react';
 import { RollingNumber } from './RollingNumber';
 import { BackgroundBeamsWithCollision } from './ui/background-beams-with-collision';
 
@@ -21,6 +31,10 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
   const [editSavingsVal, setEditSavingsVal] = useState(profile.currentSavings.toString());
   const [isEditingTarget, setIsEditingTarget] = useState(false);
   const [editTargetVal, setEditTargetVal] = useState(profile.targetSavings.toString());
+  const [isEditingEarnings, setIsEditingEarnings] = useState(false);
+  const [editEarningsVal, setEditEarningsVal] = useState((profile.baseLaborEarnings ?? 500000).toString());
+  const [isEditingLiving, setIsEditingLiving] = useState(false);
+  const [editLivingVal, setEditLivingVal] = useState(snapshot.totalLivingExpenses.toString());
 
   const handleSaveSavings = () => {
     const val = parseFloat(editSavingsVal);
@@ -36,6 +50,22 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
       onUpdateProfile({ ...profile, targetSavings: val });
     }
     setIsEditingTarget(false);
+  };
+
+  const handleSaveEarnings = () => {
+    const val = parseFloat(editEarningsVal);
+    if (!isNaN(val) && onUpdateProfile) {
+      onUpdateProfile({ ...profile, baseLaborEarnings: val });
+    }
+    setIsEditingEarnings(false);
+  };
+
+  const handleSaveLiving = () => {
+    const val = parseFloat(editLivingVal);
+    if (!isNaN(val) && onUpdateProfile) {
+      onUpdateProfile({ ...profile, baseLivingExpense: val });
+    }
+    setIsEditingLiving(false);
   };
 
   const handleQuickAdjust = (delta: number) => {
@@ -110,6 +140,126 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
           </div>
         </div>
       </BackgroundBeamsWithCollision>
+
+      {/* Total Career Earnings & Total Lifetime Expenses (含负债) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Left: 总劳动所得 */}
+        <div className="border border-zinc-200/90 bg-white p-4 rounded-md shadow-2xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-xs mb-2">
+              <div className="flex items-center gap-1.5 text-zinc-700 font-medium">
+                <Briefcase className="w-3.5 h-3.5 text-zinc-600" />
+                <span>总劳动所得 (累计)</span>
+              </div>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-zinc-100 text-zinc-600 border border-zinc-200">
+                秒级递增中
+              </span>
+            </div>
+
+            {isEditingEarnings ? (
+              <div className="flex items-center gap-1.5 my-1">
+                <input
+                  type="number"
+                  value={editEarningsVal}
+                  onChange={e => setEditEarningsVal(e.target.value)}
+                  className="bg-zinc-50 border border-zinc-300 px-2 py-1 rounded-sm text-sm font-mono text-zinc-900 w-32 focus:outline-none focus:border-zinc-500"
+                  autoFocus
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleSaveEarnings();
+                    if (e.key === 'Escape') setIsEditingEarnings(false);
+                  }}
+                />
+                <button
+                  onClick={handleSaveEarnings}
+                  className="px-2 py-1 bg-zinc-900 hover:bg-zinc-800 text-white rounded-sm text-xs font-sans"
+                >
+                  确定
+                </button>
+              </div>
+            ) : (
+              <div
+                onClick={() => {
+                  setEditEarningsVal((profile.baseLaborEarnings ?? 500000).toString());
+                  setIsEditingEarnings(true);
+                }}
+                className="group flex items-baseline gap-1.5 cursor-pointer py-1"
+                title="点击调整历史累计劳动所得基准值"
+              >
+                <div className="text-2xl font-bold font-mono text-zinc-900 group-hover:text-zinc-700 transition">
+                  <RollingNumber value={formatMoney(snapshot.totalLaborEarningsLive)} />
+                </div>
+                <Edit2 className="w-3 h-3 text-zinc-300 group-hover:text-zinc-600 transition" />
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-100 text-[11px] text-zinc-500">
+            <span>基准所得: ¥{(profile.baseLaborEarnings ?? 500000).toLocaleString()}</span>
+            <span className="text-emerald-700 font-mono font-medium">
+              今日贡献 +¥{snapshot.earnedToday.toFixed(2)}
+            </span>
+          </div>
+        </div>
+
+        {/* Right: 总花费 (含负债) */}
+        <div className="border border-zinc-200/90 bg-white p-4 rounded-md shadow-2xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-xs mb-2">
+              <div className="flex items-center gap-1.5 text-zinc-700 font-medium">
+                <Receipt className="w-3.5 h-3.5 text-zinc-600" />
+                <span>总花费 (含生活与全部负债)</span>
+              </div>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-rose-50 text-rose-700 border border-rose-200">
+                含负债支出
+              </span>
+            </div>
+
+            {isEditingLiving ? (
+              <div className="flex items-center gap-1.5 my-1">
+                <input
+                  type="number"
+                  value={editLivingVal}
+                  onChange={e => setEditLivingVal(e.target.value)}
+                  className="bg-zinc-50 border border-zinc-300 px-2 py-1 rounded-sm text-sm font-mono text-zinc-900 w-32 focus:outline-none focus:border-zinc-500"
+                  autoFocus
+                  placeholder="生活开销基准"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleSaveLiving();
+                    if (e.key === 'Escape') setIsEditingLiving(false);
+                  }}
+                />
+                <button
+                  onClick={handleSaveLiving}
+                  className="px-2 py-1 bg-zinc-900 hover:bg-zinc-800 text-white rounded-sm text-xs font-sans"
+                >
+                  确定
+                </button>
+              </div>
+            ) : (
+              <div
+                onClick={() => {
+                  setEditLivingVal(snapshot.totalLivingExpenses.toString());
+                  setIsEditingLiving(true);
+                }}
+                className="group flex items-baseline gap-1.5 cursor-pointer py-1"
+                title="点击微调生活消费基准 (负债部分自动计算)"
+              >
+                <div className="text-2xl font-bold font-mono text-zinc-900 group-hover:text-zinc-700 transition">
+                  <RollingNumber value={formatMoney(snapshot.totalExpensesLive)} />
+                </div>
+                <Edit2 className="w-3 h-3 text-zinc-300 group-hover:text-zinc-600 transition" />
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-100 text-[11px] text-zinc-500">
+            <span>生活消费: ¥{snapshot.totalLivingExpenses.toLocaleString()}</span>
+            <span className="text-rose-600 font-mono font-medium">
+              负债总额: ¥{snapshot.totalDebt.toLocaleString()}
+            </span>
+          </div>
+        </div>
+      </div>
 
       {/* Live Debt Payoff Progress Card (负债实时消减) */}
       {snapshot.totalDebt > 0 && (

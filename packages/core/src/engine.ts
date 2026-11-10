@@ -1,4 +1,4 @@
-import { Liability, TickerSnapshot, UserProfile } from './types.js';
+import { Liability, TickerSnapshot, UserProfile, Transaction } from './types.js';
 
 export function parseTimeToSeconds(timeStr: string): number {
   const [hours, minutes] = timeStr.split(':').map(Number);
@@ -84,7 +84,8 @@ export function calculateWorkedSecondsToday(profile: UserProfile, now = new Date
 export function calculateTickerSnapshot(
   profile: UserProfile,
   liabilities: Liability[],
-  now = new Date()
+  now = new Date(),
+  transactions: Transaction[] = []
 ): TickerSnapshot {
   const salaryPerSec = calculateSalaryPerSecond(profile);
   const dailyDebt = calculateDailyDebtCost(liabilities, profile.workDaysPerMonth);
@@ -103,7 +104,10 @@ export function calculateTickerSnapshot(
 
   // Live decreasing debt calculations
   const activeLiabilities = liabilities.filter(l => (l.status ?? 'active') === 'active');
-  const totalDebt = activeLiabilities.reduce((acc, curr) => acc + curr.totalAmount, 0);
+  const totalDebt = activeLiabilities.reduce(
+    (acc, curr) => acc + (curr.totalAmount > 0 ? curr.totalAmount : curr.remainingAmount),
+    0
+  );
   const baseRemainingDebt = activeLiabilities.reduce((acc, curr) => acc + curr.remainingAmount, 0);
 
   // Today's debt消减: starts at dailyDebt and decreases to 0 as earnedToday grows
@@ -119,6 +123,20 @@ export function calculateTickerSnapshot(
   const dailyWorkSeconds = calculateDailyWorkingSeconds(profile);
   const annualWorkHours = (profile.workDaysPerMonth * dailyWorkSeconds * 12) / 3600;
   const yearsToDebtFree = annualWorkHours > 0 ? hoursToDebtFree / annualWorkHours : 0;
+
+  // Total Labor Earnings (总劳动所得 = 历史基准 + 今日实时所赚)
+  const baseLaborEarnings = profile.baseLaborEarnings ?? 500000;
+  const totalLaborEarningsLive = baseLaborEarnings + earnedToday;
+
+  // Total Expenses (总花费 = 累计生活日常开销 + 负债总额)
+  // 如果没有单独指定 baseLivingExpense，则默认历史生活开销 = 累计所得 - 当前结余存款
+  const txExpenses = transactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const defaultBaseLiving = Math.max(0, baseLaborEarnings - profile.currentSavings);
+  const baseLiving = profile.baseLivingExpense !== undefined ? profile.baseLivingExpense : defaultBaseLiving;
+  const totalLivingExpenses = baseLiving + txExpenses;
+  const totalExpensesLive = totalLivingExpenses + totalDebt;
 
   return {
     earnedToday: Math.round(earnedToday * 100) / 100,
@@ -136,6 +154,9 @@ export function calculateTickerSnapshot(
     todayDebtRemainingLive: Math.round(todayDebtRemainingLive * 100) / 100,
     hoursToDebtFree: Math.round(hoursToDebtFree * 10) / 10,
     yearsToDebtFree: Math.round(yearsToDebtFree * 10) / 10,
+    totalLaborEarningsLive: Math.round(totalLaborEarningsLive * 100) / 100,
+    totalExpensesLive: Math.round(totalExpensesLive * 100) / 100,
+    totalLivingExpenses: Math.round(totalLivingExpenses * 100) / 100,
     isWorkingTime,
     isLunchBreak,
   };

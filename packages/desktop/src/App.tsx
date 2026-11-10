@@ -22,6 +22,7 @@ const DEFAULT_PROFILE: UserProfile = {
   lunchEndTime: '13:30',
   targetSavings: 100000,
   currentSavings: 35000,
+  baseLaborEarnings: 500000,
 };
 
 const DEFAULT_LIABILITIES: Liability[] = [
@@ -70,7 +71,7 @@ export function App() {
 
   // Live snapshot calculation
   const [snapshot, setSnapshot] = useState<TickerSnapshot>(() =>
-    calculateTickerSnapshot(profile, liabilities)
+    calculateTickerSnapshot(profile, liabilities, new Date(), transactions)
   );
 
   useEffect(() => {
@@ -88,12 +89,12 @@ export function App() {
   // Real-time ticking (every 200ms for ultra-smooth rolling odometer)
   useEffect(() => {
     const update = () => {
-      setSnapshot(calculateTickerSnapshot(profile, liabilities, new Date()));
+      setSnapshot(calculateTickerSnapshot(profile, liabilities, new Date(), transactions));
     };
     update();
     const timer = setInterval(update, 200);
     return () => clearInterval(timer);
-  }, [profile, liabilities]);
+  }, [profile, liabilities, transactions]);
 
   const handleAddLiability = (item: Liability) => {
     setLiabilities(prev => [item, ...prev]);

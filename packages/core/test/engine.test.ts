@@ -75,6 +75,14 @@ describe('SalaryTicker Engine', () => {
     expect(snapshot.earnedToday).toBe(625);
     expect(snapshot.netToday).toBe(425);
     expect(snapshot.isNetPositive).toBe(true);
+
+    // Total labor earnings and expenses including debt:
+    // Base labor earnings default: 500,000 + 625 earnedToday = 500625
+    expect(snapshot.totalLaborEarningsLive).toBe(500625);
+    // Base living expenses: 500,000 - 10,000 (savings) = 490,000
+    // Total debt: 1,000,000
+    // Total expenses: 490,000 + 1,000,000 = 1,490,000
+    expect(snapshot.totalExpensesLive).toBe(1490000);
   });
 });
 

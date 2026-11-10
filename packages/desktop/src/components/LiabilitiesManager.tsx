@@ -27,12 +27,15 @@ export const LiabilitiesManager: React.FC<LiabilitiesManagerProps> = ({
     e.preventDefault();
     if (!newTitle.trim() || !newMonthly) return;
 
+    const totalAmt = parseFloat(newTotal) || parseFloat(newRemaining) || 0;
+    const remainingAmt = parseFloat(newRemaining) || totalAmt;
+
     onAddLiability({
       id: Date.now(),
       title: newTitle.trim(),
       type: newType,
-      totalAmount: parseFloat(newTotal) || 0,
-      remainingAmount: parseFloat(newRemaining) || parseFloat(newTotal) || 0,
+      totalAmount: totalAmt,
+      remainingAmount: remainingAmt,
       monthlyPayment: parseFloat(newMonthly) || 0,
       repayDay: parseInt(newRepayDay) || 10,
       status: 'active',
