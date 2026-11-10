@@ -18,15 +18,29 @@
 
     <!-- Main Hero Live Net Amount -->
     <view class="hero-card">
-      <text class="hero-label">今日净收入</text>
+      <view class="hero-header-row">
+        <text class="hero-label">今日净收入</text>
+        <view class="mode-pills">
+          <text
+            class="mode-pill"
+            :class="{ active: incomeDisplayMode === 'main' }"
+            @click="incomeDisplayMode = 'main'"
+          >主要收入</text>
+          <text
+            class="mode-pill"
+            :class="{ active: incomeDisplayMode === 'total' }"
+            @click="incomeDisplayMode = 'total'"
+          >总收入</text>
+        </view>
+      </view>
       <text
         class="hero-amount mono-num"
-        :class="snapshot.isNetPositive ? 'text-positive' : 'text-negative'"
+        :class="isHeroPositive ? 'text-positive' : 'text-negative'"
       >
         {{ formattedNetAmount }}
       </text>
       <text class="hero-sub mono-num">
-        ({{ (snapshot.salaryPerSecond * 3600).toFixed(1) }} 元/时)
+        ({{ heroHourlyRate }} 元/时)
       </text>
     </view>
 
@@ -108,6 +122,7 @@ export default {
     return {
       isPrivacy: false,
       isLandscape: false,
+      incomeDisplayMode: 'main', // 'main' (主要收入) | 'total' (总收入)
       timer: null,
       profile: {
         monthlySalary: 20000,
@@ -159,10 +174,25 @@ export default {
     };
   },
   computed: {
+    heroNetValue() {
+      if (this.incomeDisplayMode === 'main') {
+        return (this.snapshot.mainLaborEarnedToday || 0) - (this.snapshot.dailyDebtCost || 0);
+      }
+      return this.snapshot.netToday || 0;
+    },
+    isHeroPositive() {
+      return this.heroNetValue >= 0;
+    },
+    heroHourlyRate() {
+      if (this.incomeDisplayMode === 'main') {
+        return (this.snapshot.salaryPerHour || (this.snapshot.salaryPerSecond * 3600)).toFixed(1);
+      }
+      return ((this.snapshot.totalIncomePerSecond || 0) * 3600).toFixed(1);
+    },
     formattedNetAmount() {
       if (this.isPrivacy) return '****';
-      const sign = this.snapshot.netToday >= 0 ? '+' : '-';
-      return `${sign}¥${Math.abs(this.snapshot.netToday).toFixed(2)}`;
+      const sign = this.heroNetValue >= 0 ? '+' : '-';
+      return `${sign}¥${Math.abs(this.heroNetValue).toFixed(2)}`;
     },
     statusText() {
       if (this.snapshot.isWorkingTime) return '计费工作中';
@@ -343,9 +373,37 @@ export default {
   background-color: #ffffff;
   border: 1rpx solid #e4e4e7;
   border-radius: 8rpx;
-  padding: 48rpx 32rpx;
+  padding: 40rpx 32rpx;
   text-align: center;
   margin-bottom: 24rpx;
+}
+
+.hero-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.mode-pills {
+  display: flex;
+  background-color: #f4f4f5;
+  border-radius: 6rpx;
+  padding: 4rpx;
+}
+
+.mode-pill {
+  font-size: 20rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 4rpx;
+  color: #71717a;
+}
+
+.mode-pill.active {
+  background-color: #ffffff;
+  color: #18181b;
+  font-weight: 600;
+  box-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.05);
 }
 
 .hero-label {

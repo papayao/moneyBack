@@ -48,6 +48,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
 }) => {
   const [incomeTab, setIncomeTab] = useState<'streaming' | 'onetime'>('streaming');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [incomeDisplayMode, setIncomeDisplayMode] = useState<'main' | 'total'>('main');
 
   // New income form states
   const [newTitle, setNewTitle] = useState('');
@@ -151,60 +152,112 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
       ? Math.min(100, Math.max(0, (profile.currentSavings / profile.targetSavings) * 100))
       : 0;
 
+  const currentNetValue =
+    incomeDisplayMode === 'main'
+      ? snapshot.mainLaborEarnedToday - snapshot.dailyDebtCost
+      : snapshot.netToday;
+
+  const isCurrentPositive = currentNetValue >= 0;
+
+  const currentHourlyRate =
+    incomeDisplayMode === 'main'
+      ? snapshot.salaryPerHour
+      : Number((snapshot.totalIncomePerSecond * 3600).toFixed(1));
+
+  const currentPerSecondRate =
+    incomeDisplayMode === 'main'
+      ? snapshot.salaryPerSecond
+      : snapshot.totalIncomePerSecond;
+
+  const currentMonthlyIncome =
+    incomeDisplayMode === 'main'
+      ? profile.monthlySalary
+      : snapshot.totalMonthlyIncome;
+
+  const currentTodayEarned =
+    incomeDisplayMode === 'main'
+      ? snapshot.mainLaborEarnedToday
+      : snapshot.earnedToday;
+
   return (
     <div className="space-y-4">
       {/* Main Live Net Ticker Card with Collision Beams & Separated Main Salary vs Passive Flows */}
-      <BackgroundBeamsWithCollision isPositive={snapshot.isNetPositive} className="p-5 md:p-6">
+      <BackgroundBeamsWithCollision isPositive={isCurrentPositive} className="p-5 md:p-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full items-start">
           {/* Left Column: Hero Net Ticker & Isolated Labor Salary Block */}
           <div className="lg:col-span-6 flex flex-col justify-between space-y-4">
             <div>
               <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
-                <span className="font-medium">今日净收入</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-zinc-800">今日净收入</span>
+                  <div className="flex bg-zinc-200/70 p-0.5 rounded-xs text-[10px]">
+                    <button
+                      onClick={() => setIncomeDisplayMode('main')}
+                      className={`px-1.5 py-0.5 rounded-xs transition font-medium cursor-pointer ${
+                        incomeDisplayMode === 'main'
+                          ? 'bg-white text-zinc-900 shadow-2xs'
+                          : 'text-zinc-600 hover:text-zinc-900'
+                      }`}
+                    >
+                      主要收入
+                    </button>
+                    <button
+                      onClick={() => setIncomeDisplayMode('total')}
+                      className={`px-1.5 py-0.5 rounded-xs transition font-medium cursor-pointer ${
+                        incomeDisplayMode === 'total'
+                          ? 'bg-white text-zinc-900 shadow-2xs'
+                          : 'text-zinc-600 hover:text-zinc-900'
+                      }`}
+                    >
+                      总收入
+                    </button>
+                  </div>
+                </div>
+
                 <span className="font-mono text-zinc-500">
-                  {snapshot.totalIncomePerSecond > 0
-                    ? `¥${(snapshot.totalIncomePerSecond * 3600).toFixed(1)}/时`
-                    : '¥0.0/时'}
+                  ¥{currentHourlyRate}/时
                 </span>
               </div>
 
               <div className="flex items-baseline gap-3 my-1">
                 <RollingNumber
-                  value={formatMoney(snapshot.netToday, true)}
+                  value={formatMoney(currentNetValue, true)}
                   className={`text-4xl md:text-5xl font-bold ${
-                    snapshot.isNetPositive ? 'text-emerald-600' : 'text-rose-600'
+                    isCurrentPositive ? 'text-emerald-600' : 'text-rose-600'
                   }`}
                 />
               </div>
             </div>
 
-            {/* Isolated Labor Salary Unit */}
+            {/* Income Unit Card (主要工薪 vs 全部收入) */}
             <div className="bg-white/90 border border-zinc-200/90 rounded-sm p-3 space-y-2">
               <div className="flex items-center justify-between text-[11px] pb-1.5 border-b border-zinc-100">
                 <div className="flex items-center gap-1.5 font-semibold text-zinc-900">
                   <Briefcase className="w-3.5 h-3.5 text-zinc-700" />
-                  <span>主业工薪</span>
+                  <span>{incomeDisplayMode === 'main' ? '主要收入' : '总收入'}</span>
                 </div>
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-zinc-100 text-zinc-600 border border-zinc-200">
-                  {profile.workDaysPerMonth}天/月
+                  {incomeDisplayMode === 'main' ? `${profile.workDaysPerMonth}天/月` : '多元现金流'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-xs text-zinc-500">
-                    时薪 <strong className="text-zinc-800 font-mono">¥{snapshot.salaryPerHour}</strong>
-                    <span className="text-zinc-400 text-[10px] ml-1">(+¥{snapshot.salaryPerSecond.toFixed(3)}/秒)</span>
+                    时薪 <strong className="text-zinc-800 font-mono">¥{currentHourlyRate}</strong>
+                    <span className="text-zinc-400 text-[10px] ml-1">(+¥{currentPerSecondRate.toFixed(3)}/秒)</span>
                   </div>
                   <div className="text-[11px] text-zinc-400 mt-0.5">
-                    月薪: ¥{profile.monthlySalary.toLocaleString()}
+                    月入: ¥{Math.round(currentMonthlyIncome).toLocaleString()}
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <div className="text-[10px] text-zinc-400">今日工薪</div>
+                  <div className="text-[10px] text-zinc-400">
+                    {incomeDisplayMode === 'main' ? '今日工薪' : '今日总入账'}
+                  </div>
                   <div className="text-sm font-bold font-mono text-emerald-700">
-                    <RollingNumber value={formatMoney(snapshot.mainLaborEarnedToday)} />
+                    <RollingNumber value={formatMoney(currentTodayEarned)} />
                   </div>
                   <span
                     className={`text-[10px] px-1 py-0.2 rounded-sm inline-block mt-0.5 font-sans ${
