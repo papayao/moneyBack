@@ -184,8 +184,8 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
       {/* Main Live Net Ticker Card with Collision Beams & Separated Main Salary vs Passive Flows */}
       <BackgroundBeamsWithCollision isPositive={isCurrentPositive} className="p-5 md:p-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full items-start">
-          {/* Left Column: Hero Net Ticker & Isolated Labor Salary Block */}
-          <div className="lg:col-span-6 flex flex-col justify-between space-y-4">
+          {/* Main Column: Hero Net Ticker & Salary Block (在主要收入模式下独占全宽，界面极为干净) */}
+          <div className={`${incomeDisplayMode === 'main' ? 'lg:col-span-12 space-y-4' : 'lg:col-span-6 flex flex-col justify-between space-y-4'}`}>
             <div>
               <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
                 <div className="flex items-center gap-2">
@@ -277,9 +277,17 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
               <div className="flex items-center gap-2 p-1.5 bg-zinc-50/70 rounded-sm border border-zinc-200/60">
                 <TrendingUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                 <div>
-                  <div className="text-[10px] text-zinc-400">今日总收益</div>
+                  <div className="text-[10px] text-zinc-400">
+                    {incomeDisplayMode === 'main' ? '今日工薪' : '今日总收益'}
+                  </div>
                   <div className="text-xs font-semibold font-mono text-zinc-800">
-                    <RollingNumber value={formatMoney(snapshot.earnedToday)} />
+                    <RollingNumber
+                      value={formatMoney(
+                        incomeDisplayMode === 'main'
+                          ? snapshot.mainLaborEarnedToday
+                          : snapshot.earnedToday
+                      )}
+                    />
                   </div>
                 </div>
               </div>
@@ -296,176 +304,178 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
             </div>
           </div>
 
-          {/* Right Column: Passive & Family Additional Streams (24/7 全天候与多元流) */}
-          <div className="lg:col-span-6 bg-zinc-50/90 border border-zinc-200/90 rounded-sm p-3 space-y-2.5 flex flex-col justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs border-b border-zinc-200/60 pb-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-zinc-800">额外收入</span>
-                  <div className="flex bg-zinc-200/70 p-0.5 rounded-xs text-[10px]">
-                    <button
-                      onClick={() => setIncomeTab('streaming')}
-                      className={`px-1.5 py-0.5 rounded-xs transition font-medium ${
-                        incomeTab === 'streaming'
-                          ? 'bg-white text-zinc-900 shadow-2xs'
-                          : 'text-zinc-600 hover:text-zinc-900'
-                      }`}
-                    >
-                      按秒流式 ({snapshot.streamingIncomeItems?.length || 0})
-                    </button>
-                    <button
-                      onClick={() => setIncomeTab('onetime')}
-                      className={`px-1.5 py-0.5 rounded-xs transition font-medium ${
-                        incomeTab === 'onetime'
-                          ? 'bg-white text-zinc-900 shadow-2xs'
-                          : 'text-zinc-600 hover:text-zinc-900'
-                      }`}
-                    >
-                      一次性奖金 ({snapshot.oneTimeIncomes?.length || 0})
-                    </button>
+          {/* Right Column: 仅在切换为【总收入】模式时展示额外收入列表，主要收入界面保持完全干净 */}
+          {incomeDisplayMode === 'total' && (
+            <div className="lg:col-span-6 bg-zinc-50/90 border border-zinc-200/90 rounded-sm p-3 space-y-2.5 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs border-b border-zinc-200/60 pb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-zinc-800">额外收入</span>
+                    <div className="flex bg-zinc-200/70 p-0.5 rounded-xs text-[10px]">
+                      <button
+                        onClick={() => setIncomeTab('streaming')}
+                        className={`px-1.5 py-0.5 rounded-xs transition font-medium ${
+                          incomeTab === 'streaming'
+                            ? 'bg-white text-zinc-900 shadow-2xs'
+                            : 'text-zinc-600 hover:text-zinc-900'
+                        }`}
+                      >
+                        按秒流式 ({snapshot.streamingIncomeItems?.length || 0})
+                      </button>
+                      <button
+                        onClick={() => setIncomeTab('onetime')}
+                        className={`px-1.5 py-0.5 rounded-xs transition font-medium ${
+                          incomeTab === 'onetime'
+                            ? 'bg-white text-zinc-900 shadow-2xs'
+                            : 'text-zinc-600 hover:text-zinc-900'
+                        }`}
+                      >
+                        一次性奖金 ({snapshot.oneTimeIncomes?.length || 0})
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Top Right Add Button */}
+                  <button
+                    onClick={() => setShowAddModal(true)}
+                    className="flex items-center gap-1 px-2 py-0.5 text-xs text-zinc-700 hover:text-zinc-900 bg-white hover:bg-zinc-100 rounded-sm border border-zinc-200 shadow-2xs transition font-medium cursor-pointer"
+                    title="添加新收入项"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-zinc-600" />
+                    <span>添加</span>
+                  </button>
                 </div>
 
-                {/* Top Right Add Button */}
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className="flex items-center gap-1 px-2 py-0.5 text-xs text-zinc-700 hover:text-zinc-900 bg-white hover:bg-zinc-100 rounded-sm border border-zinc-200 shadow-2xs transition font-medium cursor-pointer"
-                  title="添加新收入项"
-                >
-                  <Plus className="w-3.5 h-3.5 text-zinc-600" />
-                  <span>添加</span>
-                </button>
+                {/* Streaming Additional Items Tab */}
+                {incomeTab === 'streaming' && (
+                  (!snapshot.streamingIncomeItems || snapshot.streamingIncomeItems.length === 0) ? (
+                    <div className="py-8 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 rounded-sm">
+                      暂无流式现金流，点击右上角【添加】录入
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 max-h-56 overflow-y-auto text-xs font-mono">
+                      {snapshot.streamingIncomeItems.map(item => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between p-2 bg-white border border-zinc-200/80 rounded-sm hover:border-zinc-300 transition group"
+                        >
+                          <div className="truncate max-w-[170px]">
+                            <div className="text-[11px] font-sans font-medium text-zinc-800 truncate flex items-center gap-1.5">
+                              <span title={item.title}>{item.title}</span>
+                              <span className={`text-[9px] px-1 py-0.2 rounded-sm font-mono flex items-center gap-1 ${
+                                item.is24x7
+                                  ? 'bg-zinc-100 text-zinc-600 border border-zinc-200'
+                                  : item.isCurrentlyActive
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-zinc-100 text-zinc-400'
+                              }`}>
+                                {item.isCurrentlyActive && <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>}
+                                {item.is24x7 ? '30天·24h' : `${item.workDaysPerMonth || 21.75}天·${item.workStartTime || '09:00'}-${item.workEndTime || '18:00'}`}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                              今日已入: <strong className="text-zinc-600">+¥{item.todayEarned.toFixed(2)}</strong>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="text-right">
+                              <span className="text-emerald-700 font-semibold text-xs font-mono">
+                                +¥{item.ratePerSecond.toFixed(4)}
+                              </span>
+                              <span className="text-[10px] text-zinc-400 block font-sans">
+                                /秒 · ¥{item.amount.toLocaleString()}/{item.frequency === 'annual' ? '年' : '月'}
+                              </span>
+                            </div>
+                            {onRemoveIncomeSource && (
+                              <button
+                                onClick={() => onRemoveIncomeSource(item.id)}
+                                className="opacity-0 group-hover:opacity-100 text-zinc-300 hover:text-rose-600 p-1 transition rounded-xs"
+                                title="删除此收入项"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                )}
+
+                {/* One-time Bonus Tab */}
+                {incomeTab === 'onetime' && (
+                  (!snapshot.oneTimeIncomes || snapshot.oneTimeIncomes.length === 0) ? (
+                    <div className="py-8 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 rounded-sm">
+                      暂无一次性奖金项，点击右上角【添加】录入年终奖或退税
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 max-h-56 overflow-y-auto text-xs">
+                      {snapshot.oneTimeIncomes.map(item => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between p-2 bg-white border border-zinc-200/80 rounded-sm hover:border-zinc-300 transition group"
+                        >
+                          <div>
+                            <div className="text-[11px] font-sans font-medium text-zinc-800 flex items-center gap-1.5">
+                              <Gift className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                              <span>{item.title}</span>
+                              <span className="text-[9px] px-1 py-0.2 rounded-sm bg-rose-50 text-rose-700 border border-rose-200 font-mono">
+                                待处理奖金
+                              </span>
+                            </div>
+                            <div className="text-xs font-mono font-semibold text-zinc-800 mt-0.5">
+                              +¥{item.amount.toLocaleString()}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            {onInjectWindfall && (
+                              <button
+                                onClick={() => onInjectWindfall(item.amount, item.title, item.id!)}
+                                className="px-2 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xs transition font-medium cursor-pointer"
+                                title="计入当前总存钱存款"
+                              >
+                                注入资产
+                              </button>
+                            )}
+                            {onToggleAmortize && (
+                              <button
+                                onClick={() => onToggleAmortize(item.id!)}
+                                className="px-2 py-0.5 text-[10px] bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 rounded-xs transition font-medium cursor-pointer"
+                                title="按一年平摊进日常每秒时钟"
+                              >
+                                平摊至秒
+                              </button>
+                            )}
+                            {onRemoveIncomeSource && (
+                              <button
+                                onClick={() => onRemoveIncomeSource(item.id!)}
+                                className="opacity-0 group-hover:opacity-100 text-zinc-300 hover:text-rose-600 p-1 transition"
+                                title="删除"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                )}
               </div>
 
-              {/* Streaming Additional Items Tab */}
-              {incomeTab === 'streaming' && (
-                (!snapshot.streamingIncomeItems || snapshot.streamingIncomeItems.length === 0) ? (
-                  <div className="py-8 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 rounded-sm">
-                    暂无流式现金流，点击右上角【添加】录入
-                  </div>
-                ) : (
-                  <div className="space-y-1.5 max-h-56 overflow-y-auto text-xs font-mono">
-                    {snapshot.streamingIncomeItems.map(item => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between p-2 bg-white border border-zinc-200/80 rounded-sm hover:border-zinc-300 transition group"
-                      >
-                        <div className="truncate max-w-[170px]">
-                          <div className="text-[11px] font-sans font-medium text-zinc-800 truncate flex items-center gap-1.5">
-                            <span title={item.title}>{item.title}</span>
-                            <span className={`text-[9px] px-1 py-0.2 rounded-sm font-mono flex items-center gap-1 ${
-                              item.is24x7
-                                ? 'bg-zinc-100 text-zinc-600 border border-zinc-200'
-                                : item.isCurrentlyActive
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : 'bg-zinc-100 text-zinc-400'
-                            }`}>
-                              {item.isCurrentlyActive && <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>}
-                              {item.is24x7 ? '30天·24h' : `${item.workDaysPerMonth || 21.75}天·${item.workStartTime || '09:00'}-${item.workEndTime || '18:00'}`}
-                            </span>
-                          </div>
-                          <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
-                            今日已入: <strong className="text-zinc-600">+¥{item.todayEarned.toFixed(2)}</strong>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <div className="text-right">
-                            <span className="text-emerald-700 font-semibold text-xs font-mono">
-                              +¥{item.ratePerSecond.toFixed(4)}
-                            </span>
-                            <span className="text-[10px] text-zinc-400 block font-sans">
-                              /秒 · ¥{item.amount.toLocaleString()}/{item.frequency === 'annual' ? '年' : '月'}
-                            </span>
-                          </div>
-                          {onRemoveIncomeSource && (
-                            <button
-                              onClick={() => onRemoveIncomeSource(item.id)}
-                              className="opacity-0 group-hover:opacity-100 text-zinc-300 hover:text-rose-600 p-1 transition rounded-xs"
-                              title="删除此收入项"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )
-              )}
-
-              {/* One-time Bonus Tab */}
-              {incomeTab === 'onetime' && (
-                (!snapshot.oneTimeIncomes || snapshot.oneTimeIncomes.length === 0) ? (
-                  <div className="py-8 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 rounded-sm">
-                    暂无一次性奖金项，点击右上角【添加】录入年终奖或退税
-                  </div>
-                ) : (
-                  <div className="space-y-1.5 max-h-56 overflow-y-auto text-xs">
-                    {snapshot.oneTimeIncomes.map(item => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between p-2 bg-white border border-zinc-200/80 rounded-sm hover:border-zinc-300 transition group"
-                      >
-                        <div>
-                          <div className="text-[11px] font-sans font-medium text-zinc-800 flex items-center gap-1.5">
-                            <Gift className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                            <span>{item.title}</span>
-                            <span className="text-[9px] px-1 py-0.2 rounded-sm bg-rose-50 text-rose-700 border border-rose-200 font-mono">
-                              待处理奖金
-                            </span>
-                          </div>
-                          <div className="text-xs font-mono font-semibold text-zinc-800 mt-0.5">
-                            +¥{item.amount.toLocaleString()}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                          {onInjectWindfall && (
-                            <button
-                              onClick={() => onInjectWindfall(item.amount, item.title, item.id!)}
-                              className="px-2 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xs transition font-medium cursor-pointer"
-                              title="计入当前总存钱存款"
-                            >
-                              注入资产
-                            </button>
-                          )}
-                          {onToggleAmortize && (
-                            <button
-                              onClick={() => onToggleAmortize(item.id!)}
-                              className="px-2 py-0.5 text-[10px] bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 rounded-xs transition font-medium cursor-pointer"
-                              title="按一年平摊进日常每秒时钟"
-                            >
-                              平摊至秒
-                            </button>
-                          )}
-                          {onRemoveIncomeSource && (
-                            <button
-                              onClick={() => onRemoveIncomeSource(item.id!)}
-                              className="opacity-0 group-hover:opacity-100 text-zinc-300 hover:text-rose-600 p-1 transition"
-                              title="删除"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )
-              )}
+              {/* Bottom summary banner */}
+              <div className="flex items-center justify-between text-[11px] bg-white p-2 rounded-sm border border-zinc-200/70 text-zinc-600">
+                <span>{incomeTab === 'streaming' ? '今日多元额外入账合计:' : '流式月增总折合:'}</span>
+                <span className="font-semibold font-mono text-emerald-700">
+                  {incomeTab === 'streaming'
+                    ? `+¥${snapshot.additionalIncomeToday.toFixed(2)}`
+                    : `+¥${Math.round(snapshot.additionalIncomeMonthly).toLocaleString()}/月`}
+                </span>
+              </div>
             </div>
-
-            {/* Bottom summary banner */}
-            <div className="flex items-center justify-between text-[11px] bg-white p-2 rounded-sm border border-zinc-200/70 text-zinc-600">
-              <span>{incomeTab === 'streaming' ? '今日多元额外入账合计:' : '流式月增总折合:'}</span>
-              <span className="font-semibold font-mono text-emerald-700">
-                {incomeTab === 'streaming'
-                  ? `+¥${snapshot.additionalIncomeToday.toFixed(2)}`
-                  : `+¥${Math.round(snapshot.additionalIncomeMonthly).toLocaleString()}/月`}
-              </span>
-            </div>
-          </div>
+          )}
         </div>
       </BackgroundBeamsWithCollision>
 
