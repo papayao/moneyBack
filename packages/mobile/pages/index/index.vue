@@ -64,9 +64,11 @@
     <view class="savings-card">
       <view class="savings-header">
         <text class="savings-title">存钱目标进度</text>
-        <text class="savings-ratio mono-num" @click="promptEditSavings">
-          {{ isPrivacy ? '***' : '¥' + profile.currentSavings }} (点击修改) / {{ isPrivacy ? '***' : '¥' + profile.targetSavings }}
-        </text>
+        <view class="savings-ratio mono-num">
+          <text @click="promptEditSavings">{{ isPrivacy ? '***' : '¥' + profile.currentSavings }}</text>
+          <text> / </text>
+          <text @click="promptEditTarget">{{ isPrivacy ? '***' : '¥' + profile.targetSavings }} (点数字修改)</text>
+        </view>
       </view>
       <view class="progress-track">
         <view class="progress-bar" :style="{ width: progressPercent + '%' }"></view>
@@ -196,6 +198,24 @@ export default {
             const val = parseFloat(res.content);
             if (!isNaN(val)) {
               this.profile.currentSavings = val;
+              uni.setStorageSync('st_profile', JSON.stringify(this.profile));
+              this.tick();
+            }
+          }
+        },
+      });
+    },
+    promptEditTarget() {
+      uni.showModal({
+        title: '修改存钱总目标',
+        editable: true,
+        placeholderText: '请输入存钱总目标 (元)',
+        content: String(this.profile.targetSavings),
+        success: (res) => {
+          if (res.confirm && res.content) {
+            const val = parseFloat(res.content);
+            if (!isNaN(val)) {
+              this.profile.targetSavings = val;
               uni.setStorageSync('st_profile', JSON.stringify(this.profile));
               this.tick();
             }

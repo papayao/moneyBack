@@ -39,18 +39,17 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-3.5">
-          <div>
-            <label className="block text-xs text-zinc-400 mb-1">月薪 (元/月)</label>
-            <input
-              type="number"
-              value={formData.monthlySalary}
-              onChange={e => setFormData({ ...formData, monthlySalary: parseFloat(e.target.value) || 0 })}
-              className="w-full bg-zinc-950 border border-zinc-700 text-xs text-zinc-100 rounded-sm px-2.5 py-2 font-mono focus:outline-none focus:border-zinc-500"
-              required
-            />
-          </div>
-
           <div className="grid grid-cols-2 gap-2.5">
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1">月薪 (元/月)</label>
+              <input
+                type="number"
+                value={formData.monthlySalary}
+                onChange={e => setFormData({ ...formData, monthlySalary: parseFloat(e.target.value) || 0 })}
+                className="w-full bg-zinc-950 border border-zinc-700 text-xs text-zinc-100 rounded-sm px-2.5 py-2 font-mono focus:outline-none focus:border-zinc-500"
+                required
+              />
+            </div>
             <div>
               <label className="block text-xs text-zinc-400 mb-1">月工作天数</label>
               <input
@@ -62,25 +61,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 required
               />
             </div>
-            <div>
-              <label className="block text-xs text-zinc-400 mb-1">当前已有存款 (元)</label>
-              <input
-                type="number"
-                value={formData.currentSavings}
-                onChange={e => setFormData({ ...formData, currentSavings: parseFloat(e.target.value) || 0 })}
-                className="w-full bg-zinc-950 border border-zinc-700 text-xs text-zinc-100 rounded-sm px-2.5 py-2 font-mono focus:outline-none focus:border-zinc-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs text-zinc-400 mb-1">目标存款 (元)</label>
-            <input
-              type="number"
-              value={formData.targetSavings}
-              onChange={e => setFormData({ ...formData, targetSavings: parseFloat(e.target.value) || 0 })}
-              className="w-full bg-zinc-950 border border-zinc-700 text-xs text-zinc-100 rounded-sm px-2.5 py-2 font-mono focus:outline-none focus:border-zinc-500"
-            />
           </div>
 
           <div className="grid grid-cols-2 gap-2.5">

@@ -16,16 +16,6 @@
         <input v-model="profile.workDaysPerMonth" type="digit" class="input" />
       </view>
 
-      <view class="form-item">
-        <text class="label">当前已有存款 (元)</text>
-        <input v-model="profile.currentSavings" type="digit" class="input" />
-      </view>
-
-      <view class="form-item">
-        <text class="label">存钱目标 (元)</text>
-        <input v-model="profile.targetSavings" type="digit" class="input" />
-      </view>
-
       <view class="form-row">
         <view class="form-item half">
           <text class="label">上班时间</text>

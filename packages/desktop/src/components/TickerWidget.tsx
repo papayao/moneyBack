@@ -19,6 +19,8 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
 }) => {
   const [isEditingSavings, setIsEditingSavings] = useState(false);
   const [editSavingsVal, setEditSavingsVal] = useState(profile.currentSavings.toString());
+  const [isEditingTarget, setIsEditingTarget] = useState(false);
+  const [editTargetVal, setEditTargetVal] = useState(profile.targetSavings.toString());
 
   const handleSaveSavings = () => {
     const val = parseFloat(editSavingsVal);
@@ -26,6 +28,14 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
       onUpdateProfile({ ...profile, currentSavings: val });
     }
     setIsEditingSavings(false);
+  };
+
+  const handleSaveTarget = () => {
+    const val = parseFloat(editTargetVal);
+    if (!isNaN(val) && onUpdateProfile) {
+      onUpdateProfile({ ...profile, targetSavings: val });
+    }
+    setIsEditingTarget(false);
   };
 
   const handleQuickAdjust = (delta: number) => {
@@ -160,13 +170,14 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
           </div>
 
           <div className="flex items-center gap-2 font-mono text-zinc-400">
+            {/* Current Savings Edit */}
             {isEditingSavings ? (
               <div className="flex items-center gap-1.5">
                 <input
                   type="number"
                   value={editSavingsVal}
                   onChange={e => setEditSavingsVal(e.target.value)}
-                  className="bg-zinc-950 border border-zinc-600 px-1.5 py-0.5 rounded-sm text-xs font-mono text-zinc-100 w-24 focus:outline-none"
+                  className="bg-zinc-950 border border-zinc-600 px-1.5 py-0.5 rounded-sm text-xs font-mono text-zinc-100 w-20 focus:outline-none"
                   autoFocus
                   onKeyDown={e => {
                     if (e.key === 'Enter') handleSaveSavings();
@@ -175,19 +186,19 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                 />
                 <button
                   onClick={handleSaveSavings}
-                  className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-sm text-[11px] font-sans"
+                  className="px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-sm text-[11px] font-sans"
                 >
-                  保存
+                  确定
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
                 <span
                   onClick={() => {
                     setEditSavingsVal(profile.currentSavings.toString());
                     setIsEditingSavings(true);
                   }}
-                  title="点击直接修改当前存款"
+                  title="点击修改已有存款"
                   className="cursor-pointer text-zinc-200 hover:text-white border-b border-dashed border-zinc-600 hover:border-zinc-300 transition"
                 >
                   {isPrivacyMode ? '***' : formatMoney(profile.currentSavings)}
@@ -197,13 +208,59 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                     setEditSavingsVal(profile.currentSavings.toString());
                     setIsEditingSavings(true);
                   }}
-                  title="修改当前存款"
+                  title="修改已有存款"
                   className="text-zinc-500 hover:text-zinc-300"
                 >
-                  <Edit2 className="w-3 h-3" />
+                  <Edit2 className="w-2.5 h-2.5" />
                 </button>
-                <span className="text-zinc-600">/</span>
-                <span className="text-zinc-400">{isPrivacyMode ? '***' : formatMoney(profile.targetSavings)}</span>
+              </div>
+            )}
+
+            <span className="text-zinc-600">/</span>
+
+            {/* Target Savings Edit */}
+            {isEditingTarget ? (
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  value={editTargetVal}
+                  onChange={e => setEditTargetVal(e.target.value)}
+                  className="bg-zinc-950 border border-zinc-600 px-1.5 py-0.5 rounded-sm text-xs font-mono text-zinc-100 w-24 focus:outline-none"
+                  autoFocus
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleSaveTarget();
+                    if (e.key === 'Escape') setIsEditingTarget(false);
+                  }}
+                />
+                <button
+                  onClick={handleSaveTarget}
+                  className="px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-sm text-[11px] font-sans"
+                >
+                  确定
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <span
+                  onClick={() => {
+                    setEditTargetVal(profile.targetSavings.toString());
+                    setIsEditingTarget(true);
+                  }}
+                  title="点击修改目标存钱总额"
+                  className="cursor-pointer text-zinc-400 hover:text-zinc-200 border-b border-dashed border-zinc-700 hover:border-zinc-400 transition"
+                >
+                  {isPrivacyMode ? '***' : formatMoney(profile.targetSavings)}
+                </span>
+                <button
+                  onClick={() => {
+                    setEditTargetVal(profile.targetSavings.toString());
+                    setIsEditingTarget(true);
+                  }}
+                  title="修改总目标金额"
+                  className="text-zinc-500 hover:text-zinc-300"
+                >
+                  <Edit2 className="w-2.5 h-2.5" />
+                </button>
               </div>
             )}
           </div>
