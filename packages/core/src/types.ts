@@ -40,6 +40,7 @@ export interface TickerSnapshot {
   salaryPerSecond: number;
   hoursWorkedToday: number;
   hoursRemainingToSavingsTarget: number;
+  remainingTimeFormatted: string; // e.g. "530 小时 12 分钟"
   isWorkingTime: boolean;
   isLunchBreak: boolean;
 }

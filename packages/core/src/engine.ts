@@ -93,10 +93,13 @@ export function calculateTickerSnapshot(
   const earnedToday = workedSeconds * salaryPerSec;
   const netToday = earnedToday - dailyDebt;
 
-  // Savings target hours
-  const hourlySalary = salaryPerSec * 3600;
+  // Savings target hours and minutes
   const remainingSavings = Math.max(0, profile.targetSavings - profile.currentSavings);
-  const hoursRemaining = hourlySalary > 0 ? remainingSavings / hourlySalary : 0;
+  const totalRemainingSeconds = salaryPerSec > 0 ? remainingSavings / salaryPerSec : 0;
+  const remHours = Math.floor(totalRemainingSeconds / 3600);
+  const remMinutes = Math.floor((totalRemainingSeconds % 3600) / 60);
+  const remainingTimeFormatted = `${remHours} 小时 ${remMinutes} 分钟`;
+  const hoursRemaining = totalRemainingSeconds / 3600;
 
   return {
     earnedToday: Math.round(earnedToday * 100) / 100,
@@ -106,6 +109,7 @@ export function calculateTickerSnapshot(
     salaryPerSecond: salaryPerSec,
     hoursWorkedToday: Math.round((workedSeconds / 3600) * 100) / 100,
     hoursRemainingToSavingsTarget: Math.round(hoursRemaining * 10) / 10,
+    remainingTimeFormatted,
     isWorkingTime,
     isLunchBreak,
   };

@@ -110,9 +110,8 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
             <span>
               还需打工{' '}
               <strong className="text-zinc-200 font-semibold">
-                {snapshot.hoursRemainingToSavingsTarget}
-              </strong>{' '}
-              小时
+                {snapshot.remainingTimeFormatted}
+              </strong>
             </span>
           </div>
         </div>

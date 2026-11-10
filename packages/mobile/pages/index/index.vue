@@ -56,7 +56,7 @@
       </view>
       <view class="savings-footer">
         <text class="footer-hint mono-num">{{ progressPercent }}% 已达成</text>
-        <text class="footer-hint mono-num">还需打工 {{ snapshot.hoursRemainingToSavingsTarget }} 小时</text>
+        <text class="footer-hint mono-num">还需打工 {{ snapshot.remainingTimeFormatted || '0小时 0分钟' }}</text>
       </view>
     </view>
   </view>
