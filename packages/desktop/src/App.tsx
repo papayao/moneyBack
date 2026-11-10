@@ -207,7 +207,7 @@ export function App() {
       />
 
       <main className="flex-1 max-w-3xl w-full mx-auto p-4 md:p-6 space-y-5">
-        {/* Live Ticker & Target */}
+        {/* Live Ticker & Savings Target */}
         <TickerWidget
           snapshot={snapshot}
           profile={profile}
@@ -215,12 +215,12 @@ export function App() {
           onUpdateProfile={setProfile}
         />
 
-        {/* Trend Line Chart (按天、月、小时观测收入、支出、负债进度、存钱进度) */}
-        <TrendChartCard
-          profile={profile}
+        {/* Unified Debt Manager & Live Payoff Tracker (负债记录进度条与清单合并单元) */}
+        <LiabilitiesManager
           liabilities={liabilities}
-          incomeSources={incomeSources}
-          transactions={transactions}
+          snapshot={snapshot}
+          onAddLiability={handleAddLiability}
+          onRemoveLiability={handleRemoveLiability}
           isPrivacyMode={isPrivacyMode}
         />
 
@@ -234,11 +234,12 @@ export function App() {
           isPrivacyMode={isPrivacyMode}
         />
 
-        {/* Liabilities */}
-        <LiabilitiesManager
+        {/* Trend Line Chart (按天、月、小时观测收入、支出、负债进度、存钱进度) */}
+        <TrendChartCard
+          profile={profile}
           liabilities={liabilities}
-          onAddLiability={handleAddLiability}
-          onRemoveLiability={handleRemoveLiability}
+          incomeSources={incomeSources}
+          transactions={transactions}
           isPrivacyMode={isPrivacyMode}
         />
 

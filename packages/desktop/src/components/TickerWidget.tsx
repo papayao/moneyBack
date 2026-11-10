@@ -327,56 +327,6 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
         </div>
       </div>
 
-      {/* Live Debt Payoff Progress Card (负债实时消减) */}
-      {snapshot.totalDebt > 0 && (
-        <div className="border border-zinc-200/90 bg-white p-4 rounded-md shadow-2xs">
-          <div className="flex items-center justify-between text-xs mb-2.5">
-            <div className="flex items-center gap-1.5 text-zinc-800 font-medium">
-              <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
-              <span>负债实时消减进度 (房贷/车贷/卡债)</span>
-            </div>
-            <div className="flex items-center gap-1 font-mono text-xs">
-              <span className="text-zinc-500">实时剩余负债:</span>
-              <span className="text-rose-600 font-semibold font-mono">
-                {isPrivacyMode ? '****' : (
-                  <RollingNumber value={`¥${snapshot.totalDebtRemainingLive.toFixed(2)}`} />
-                )}
-              </span>
-            </div>
-          </div>
-
-          {/* Payoff Progress Bar */}
-          <div className="h-2 w-full bg-zinc-100 border border-zinc-200 rounded-sm overflow-hidden relative">
-            <div
-              className="h-full bg-rose-500 transition-all duration-300 rounded-sm"
-              style={{ width: `${Math.min(100, Math.max(0, snapshot.debtPayoffPercent))}%` }}
-            />
-          </div>
-
-          <div className="flex items-center justify-between mt-2.5 text-xs text-zinc-500">
-            <span className="font-mono">已清偿 {snapshot.debtPayoffPercent}%</span>
-            <div className="flex items-center gap-2 font-mono text-xs">
-              {snapshot.todayDebtRemainingLive > 0 ? (
-                <span className="text-amber-700">
-                  今日还差 <strong className="font-bold">¥{snapshot.todayDebtRemainingLive.toFixed(2)}</strong> 负债即归零
-                </span>
-              ) : (
-                <span className="text-emerald-700 font-medium">
-                  今日负债已全额平账！
-                </span>
-              )}
-              <span className="text-zinc-300">|</span>
-              <span>
-                完全还清自由还需{' '}
-                <strong className="text-zinc-800 font-semibold">
-                  {snapshot.yearsToDebtFree > 0 ? `${snapshot.yearsToDebtFree} 年` : '0 年'}
-                </strong>
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Target Savings Progress Card */}
       <div className="border border-zinc-200/90 bg-white p-4 rounded-md shadow-2xs">
         <div className="flex items-center justify-between text-xs mb-2.5">
