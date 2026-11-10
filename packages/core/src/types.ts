@@ -26,10 +26,24 @@ export interface Liability {
 export interface IncomeSource {
   id?: number;
   title: string;
-  type: 'partner' | 'rent' | 'interest' | 'side_hustle' | 'custom';
+  type: 'partner' | 'rent' | 'interest' | 'bonus' | 'windfall' | 'side_hustle' | 'custom';
   amount: number;
-  frequency: 'monthly' | 'annual';
-  status?: 'active' | 'paused';
+  mode?: 'streaming' | 'one_time'; // 'streaming' (按秒/持续) | 'one_time' (一次性到账/年终奖)，默认 streaming
+  frequency?: 'monthly' | 'annual' | 'once';
+  isAmortized?: boolean; // 若为一次性奖金，是否选择平摊进时钟每秒
+  status?: 'active' | 'received';
+  receivedDate?: string;
+}
+
+export interface StreamingIncomeItem {
+  id: number;
+  title: string;
+  type: string;
+  amount: number;
+  frequency: string;
+  ratePerSecond: number; // 元/秒
+  ratePerHour: number;   // 元/小时
+  todayEarned: number;   // 今日累计赚取 (元)
 }
 
 export interface Transaction {
@@ -65,6 +79,8 @@ export interface TickerSnapshot {
   additionalIncomeToday: number;
   totalIncomePerSecond: number;
   totalMonthlyIncome: number;
+  streamingIncomeItems: StreamingIncomeItem[];
+  oneTimeIncomes: IncomeSource[];
   // Lifetime totals
   totalLaborEarningsLive: number;
   totalExpensesLive: number; // 生活消费 + 负债支出

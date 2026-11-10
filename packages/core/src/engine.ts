@@ -1,4 +1,11 @@
-import { Liability, TickerSnapshot, UserProfile, Transaction, IncomeSource } from './types.js';
+import {
+  Liability,
+  TickerSnapshot,
+  UserProfile,
+  Transaction,
+  IncomeSource,
+  StreamingIncomeItem,
+} from './types.js';
 
 export function parseTimeToSeconds(timeStr: string): number {
   const [hours, minutes] = timeStr.split(':').map(Number);
@@ -83,7 +90,11 @@ export function calculateWorkedSecondsToday(profile: UserProfile, now = new Date
 
 export function calculateAdditionalMonthlyIncome(sources: IncomeSource[] = []): number {
   return sources
-    .filter(s => (s.status ?? 'active') === 'active')
+    .filter(
+      s =>
+        (s.status ?? 'active') === 'active' &&
+        ((s.mode ?? 'streaming') === 'streaming' || s.isAmortized)
+    )
     .reduce((sum, s) => {
       const amt = s.amount || 0;
       return sum + (s.frequency === 'annual' ? amt / 12 : amt);
@@ -114,6 +125,31 @@ export function calculateTickerSnapshot(
   const additionalIncomeToday = workedSeconds * additionalPerSecond;
   const earnedToday = workedSeconds * totalIncomePerSecond;
   const netToday = earnedToday - dailyDebt;
+
+  // Streaming items list (按秒计费的各项明细：配偶、房租、利息等)
+  const streamingSources = incomeSources.filter(
+    s =>
+      (s.status ?? 'active') === 'active' &&
+      ((s.mode ?? 'streaming') === 'streaming' || s.isAmortized)
+  );
+  const streamingIncomeItems: StreamingIncomeItem[] = streamingSources.map((s, idx) => {
+    const monthly = s.frequency === 'annual' ? (s.amount || 0) / 12 : (s.amount || 0);
+    const ratePerSecond = totalMonthlySeconds > 0 ? monthly / totalMonthlySeconds : 0;
+    return {
+      id: s.id ?? idx + 100,
+      title: s.title,
+      type: s.type,
+      amount: s.amount,
+      frequency: s.frequency ?? 'monthly',
+      ratePerSecond,
+      ratePerHour: Math.round(ratePerSecond * 3600 * 100) / 100,
+      todayEarned: Math.round(workedSeconds * ratePerSecond * 100) / 100,
+    };
+  });
+
+  const oneTimeIncomes = incomeSources.filter(
+    s => s.mode === 'one_time' && !s.isAmortized
+  );
 
   // Savings target hours and minutes (accelerated by total income)
   const remainingSavings = Math.max(0, profile.targetSavings - profile.currentSavings);
@@ -167,6 +203,8 @@ export function calculateTickerSnapshot(
     totalMonthlyIncome,
     additionalIncomeMonthly: Math.round(additionalIncomeMonthly * 100) / 100,
     additionalIncomeToday: Math.round(additionalIncomeToday * 100) / 100,
+    streamingIncomeItems,
+    oneTimeIncomes,
     hoursWorkedToday: Math.round((workedSeconds / 3600) * 100) / 100,
     hoursRemainingToSavingsTarget: Math.round(hoursRemaining * 10) / 10,
     remainingTimeFormatted,

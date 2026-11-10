@@ -74,6 +74,15 @@ const DEFAULT_INCOME_SOURCES: IncomeSource[] = [
     title: '存款理财利息',
     amount: 600,
     frequency: 'monthly',
+    mode: 'streaming',
+    status: 'active',
+  },
+  {
+    id: 4,
+    type: 'bonus',
+    title: '年终奖金',
+    amount: 50000,
+    mode: 'one_time',
     status: 'active',
   },
 ];
@@ -151,6 +160,23 @@ export function App() {
     setIncomeSources(prev => prev.filter(s => s.id !== id));
   };
 
+  const handleInjectWindfall = (amount: number, _title: string, id: number) => {
+    setProfile(prev => ({
+      ...prev,
+      currentSavings: prev.currentSavings + amount,
+      baseLaborEarnings: (prev.baseLaborEarnings ?? 500000) + amount,
+    }));
+    setIncomeSources(prev =>
+      prev.map(s => (s.id === id ? { ...s, status: 'received' as const } : s))
+    );
+  };
+
+  const handleToggleAmortize = (id: number) => {
+    setIncomeSources(prev =>
+      prev.map(s => (s.id === id ? { ...s, isAmortized: !s.isAmortized } : s))
+    );
+  };
+
   const handleImportTransactions = (newTxs: Transaction[]) => {
     setTransactions(prev => [...newTxs, ...prev]);
   };
@@ -198,11 +224,13 @@ export function App() {
           isPrivacyMode={isPrivacyMode}
         />
 
-        {/* Custom Income Sources (配偶/房租/利息) */}
+        {/* Custom Income Sources (配偶/房租/利息/年终奖) */}
         <IncomeSourcesManager
           incomeSources={incomeSources}
           onAddIncomeSource={handleAddIncomeSource}
           onRemoveIncomeSource={handleRemoveIncomeSource}
+          onInjectWindfall={handleInjectWindfall}
+          onToggleAmortize={handleToggleAmortize}
           isPrivacyMode={isPrivacyMode}
         />
 
