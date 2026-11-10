@@ -121,7 +121,7 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-zinc-100/60 text-zinc-900 flex flex-col font-sans">
       <Header
         snapshot={snapshot}
         onOpenProfile={() => setIsProfileOpen(true)}
@@ -151,26 +151,26 @@ export function App() {
 
         {/* Recent Transactions / Bills Summary */}
         {transactions.length > 0 && (
-          <div className="border border-zinc-800 bg-zinc-900/40 p-4 rounded-md">
+          <div className="border border-zinc-200/90 bg-white p-4 rounded-md shadow-2xs">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-zinc-200">已录入账单流水 ({transactions.length} 笔)</h3>
+              <h3 className="text-sm font-semibold text-zinc-900">已录入账单流水 ({transactions.length} 笔)</h3>
               <button
                 onClick={() => setTransactions([])}
-                className="text-xs text-zinc-400 hover:text-rose-400 transition"
+                className="text-xs text-zinc-500 hover:text-rose-600 transition"
               >
                 清空流水
               </button>
             </div>
-            <div className="divide-y divide-zinc-800/60 max-h-48 overflow-y-auto font-mono text-xs">
+            <div className="divide-y divide-zinc-100 max-h-48 overflow-y-auto font-mono text-xs">
               {transactions.slice(0, 10).map((tx, idx) => (
-                <div key={idx} className="py-2 flex items-center justify-between text-zinc-300">
+                <div key={idx} className="py-2 flex items-center justify-between text-zinc-800">
                   <div className="truncate max-w-sm">
-                    <span className="text-[10px] text-zinc-400 mr-2 bg-zinc-800 px-1 py-0.5 rounded-sm">
+                    <span className="text-[10px] text-zinc-500 mr-2 bg-zinc-100 px-1 py-0.5 rounded-sm border border-zinc-200">
                       {tx.source}
                     </span>
                     <span>{tx.remark || tx.category}</span>
                   </div>
-                  <span className={tx.type === 'income' ? 'text-emerald-400 font-semibold' : 'text-zinc-200'}>
+                  <span className={tx.type === 'income' ? 'text-emerald-600 font-semibold' : 'text-zinc-900'}>
                     {tx.type === 'income' ? `+¥${tx.amount.toFixed(2)}` : `-¥${tx.amount.toFixed(2)}`}
                   </span>
                 </div>

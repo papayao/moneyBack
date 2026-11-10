@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-zinc-950 text-zinc-100 font-sans tracking-tight;
+    @apply bg-zinc-100/70 text-zinc-900 font-sans tracking-tight;
   }
 }
 
@@ -21,12 +21,12 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #09090b;
+  background: #f4f4f5;
 }
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: #d4d4d8;
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: #a1a1aa;
 }

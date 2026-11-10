@@ -36,7 +36,7 @@ export const BackgroundBeamsWithCollision: React.FC<BackgroundBeamsProps> = ({
   return (
     <div
       ref={parentRef}
-      className={`relative flex items-center w-full justify-center overflow-hidden rounded-md border border-zinc-800 bg-zinc-950/90 ${className}`}
+      className={`relative flex items-center w-full justify-center overflow-hidden rounded-md border border-zinc-200/90 bg-white shadow-xs ${className}`}
     >
       {beams.map((beam, index) => (
         <CollisionMechanism
@@ -53,7 +53,7 @@ export const BackgroundBeamsWithCollision: React.FC<BackgroundBeamsProps> = ({
       </div>
 
       <div
-        className="absolute inset-0 pointer-events-none bg-gradient-to-t from-zinc-950 via-transparent to-transparent z-10"
+        className="absolute inset-0 pointer-events-none bg-gradient-to-t from-white/80 via-transparent to-transparent z-10"
       />
     </div>
   );

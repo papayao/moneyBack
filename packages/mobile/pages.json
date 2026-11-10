@@ -4,41 +4,41 @@
       "path": "pages/index/index",
       "style": {
         "navigationBarTitleText": "打工时钟",
-        "navigationBarBackgroundColor": "#09090b",
-        "navigationBarTextStyle": "white",
-        "backgroundColor": "#09090b"
+        "navigationBarBackgroundColor": "#ffffff",
+        "navigationBarTextStyle": "black",
+        "backgroundColor": "#f4f4f5"
       }
     },
     {
       "path": "pages/liabilities/liabilities",
       "style": {
         "navigationBarTitleText": "负债清单",
-        "navigationBarBackgroundColor": "#09090b",
-        "navigationBarTextStyle": "white",
-        "backgroundColor": "#09090b"
+        "navigationBarBackgroundColor": "#ffffff",
+        "navigationBarTextStyle": "black",
+        "backgroundColor": "#f4f4f5"
       }
     },
     {
       "path": "pages/profile/profile",
       "style": {
         "navigationBarTitleText": "工时与薪资",
-        "navigationBarBackgroundColor": "#09090b",
-        "navigationBarTextStyle": "white",
-        "backgroundColor": "#09090b"
+        "navigationBarBackgroundColor": "#ffffff",
+        "navigationBarTextStyle": "black",
+        "backgroundColor": "#f4f4f5"
       }
     }
   ],
   "globalStyle": {
-    "navigationBarTextStyle": "white",
+    "navigationBarTextStyle": "black",
     "navigationBarTitleText": "SalaryTicker",
-    "navigationBarBackgroundColor": "#09090b",
-    "backgroundColor": "#09090b"
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f4f4f5"
   },
   "tabBar": {
     "color": "#71717a",
-    "selectedColor": "#f4f4f5",
-    "backgroundColor": "#09090b",
-    "borderStyle": "black",
+    "selectedColor": "#18181b",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
     "list": [
       {
         "pagePath": "pages/index/index",

@@ -232,6 +232,8 @@ export default {
   padding: 32rpx;
   min-height: 100vh;
   box-sizing: border-box;
+  background-color: #f4f4f5;
+  color: #18181b;
 }
 
 .landscape-mode {
@@ -242,7 +244,7 @@ export default {
   left: 0;
   width: 100vh;
   height: 100vw;
-  background-color: #09090b;
+  background-color: #f4f4f5;
 }
 
 .top-bar {
@@ -261,21 +263,21 @@ export default {
 }
 
 .badge-work {
-  background-color: rgba(6, 78, 59, 0.4);
-  color: #34d399;
-  border-color: rgba(6, 95, 70, 0.6);
+  background-color: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
 }
 
 .badge-lunch {
-  background-color: rgba(120, 53, 15, 0.4);
-  color: #fbbf24;
-  border-color: rgba(146, 64, 14, 0.6);
+  background-color: #fffbeb;
+  color: #d97706;
+  border-color: #fde68a;
 }
 
 .badge-off {
-  background-color: #27272a;
-  color: #a1a1aa;
-  border-color: #3f3f46;
+  background-color: #f4f4f5;
+  color: #71717a;
+  border-color: #e4e4e7;
 }
 
 .actions {
@@ -284,9 +286,9 @@ export default {
 }
 
 .icon-btn {
-  background-color: #18181b;
-  border: 1rpx solid #27272a;
-  color: #d4d4d8;
+  background-color: #ffffff;
+  border: 1rpx solid #e4e4e7;
+  color: #18181b;
   font-size: 22rpx;
   padding: 6rpx 18rpx;
   line-height: 1.5;
@@ -295,8 +297,8 @@ export default {
 }
 
 .hero-card {
-  background-color: #18181b;
-  border: 1rpx solid #27272a;
+  background-color: #ffffff;
+  border: 1rpx solid #e4e4e7;
   border-radius: 8rpx;
   padding: 48rpx 32rpx;
   text-align: center;
@@ -305,7 +307,7 @@ export default {
 
 .hero-label {
   font-size: 22rpx;
-  color: #a1a1aa;
+  color: #71717a;
   margin-bottom: 16rpx;
   display: block;
 }
@@ -318,11 +320,11 @@ export default {
 }
 
 .text-positive {
-  color: #34d399;
+  color: #16a34a;
 }
 
 .text-negative {
-  color: #fb7185;
+  color: #dc2626;
 }
 
 .hero-sub {
@@ -340,15 +342,15 @@ export default {
 
 .stat-card {
   flex: 1;
-  background-color: #18181b;
-  border: 1rpx solid #27272a;
+  background-color: #ffffff;
+  border: 1rpx solid #e4e4e7;
   border-radius: 8rpx;
   padding: 24rpx;
 }
 
 .stat-title {
   font-size: 22rpx;
-  color: #a1a1aa;
+  color: #71717a;
   display: block;
   margin-bottom: 8rpx;
 }
@@ -360,8 +362,8 @@ export default {
 }
 
 .savings-card {
-  background-color: #18181b;
-  border: 1rpx solid #27272a;
+  background-color: #ffffff;
+  border: 1rpx solid #e4e4e7;
   border-radius: 8rpx;
   padding: 28rpx;
 }
@@ -371,11 +373,11 @@ export default {
 }
 
 .debt-bar {
-  background-color: #f43f5e;
+  background-color: #ef4444;
 }
 
 .text-debt {
-  color: #fda4af;
+  color: #dc2626;
 }
 
 .savings-header {
@@ -386,19 +388,19 @@ export default {
 
 .savings-title {
   font-size: 24rpx;
-  color: #d4d4d8;
+  color: #18181b;
   font-weight: 500;
 }
 
 .savings-ratio {
   font-size: 22rpx;
-  color: #a1a1aa;
+  color: #71717a;
 }
 
 .progress-track {
   height: 12rpx;
-  background-color: #09090b;
-  border: 1rpx solid #27272a;
+  background-color: #f4f4f5;
+  border: 1rpx solid #e4e4e7;
   border-radius: 4rpx;
   overflow: hidden;
   margin-bottom: 16rpx;

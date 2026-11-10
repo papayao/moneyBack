@@ -92,7 +92,7 @@ export default {
 <style scoped>
 .container {
   padding: 32rpx;
-  background-color: #09090b;
+  background-color: #f4f4f5;
   min-height: 100vh;
 }
 .header-section {
@@ -101,7 +101,7 @@ export default {
 .title {
   font-size: 32rpx;
   font-weight: bold;
-  color: #f4f4f5;
+  color: #18181b;
   display: block;
 }
 .subtitle {
@@ -111,16 +111,16 @@ export default {
   display: block;
 }
 .add-btn {
-  background-color: #27272a;
-  border: 1rpx solid #3f3f46;
+  background-color: #18181b;
+  border: 1rpx solid #18181b;
   border-radius: 4rpx;
-  color: #f4f4f5;
+  color: #ffffff;
   font-size: 24rpx;
   margin-bottom: 24rpx;
 }
 .card {
-  background-color: #18181b;
-  border: 1rpx solid #27272a;
+  background-color: #ffffff;
+  border: 1rpx solid #e4e4e7;
   border-radius: 6rpx;
   padding: 24rpx;
   display: flex;
@@ -131,7 +131,7 @@ export default {
 .card-title {
   font-size: 26rpx;
   font-weight: 500;
-  color: #f4f4f5;
+  color: #18181b;
   display: block;
 }
 .card-desc {
@@ -143,7 +143,7 @@ export default {
 .card-amount {
   font-size: 26rpx;
   font-weight: bold;
-  color: #fb7185;
+  color: #dc2626;
   display: block;
   text-align: right;
 }
@@ -160,15 +160,15 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 32rpx;
 }
 .modal-box {
-  background-color: #18181b;
-  border: 1rpx solid #27272a;
+  background-color: #ffffff;
+  border: 1rpx solid #e4e4e7;
   border-radius: 8rpx;
   padding: 32rpx;
   width: 100%;
@@ -176,14 +176,14 @@ export default {
 .modal-title {
   font-size: 28rpx;
   font-weight: bold;
-  color: #f4f4f5;
+  color: #18181b;
   display: block;
   margin-bottom: 24rpx;
 }
 .input {
-  background-color: #09090b;
-  border: 1rpx solid #27272a;
-  color: #f4f4f5;
+  background-color: #f4f4f5;
+  border: 1rpx solid #e4e4e7;
+  color: #18181b;
   font-size: 24rpx;
   padding: 16rpx;
   border-radius: 4rpx;
@@ -200,11 +200,11 @@ export default {
   border-radius: 4rpx;
 }
 .cancel {
-  background-color: #27272a;
-  color: #a1a1aa;
+  background-color: #f4f4f5;
+  color: #71717a;
 }
 .confirm {
-  background-color: #f4f4f5;
-  color: #09090b;
+  background-color: #18181b;
+  color: #ffffff;
 }
 </style>

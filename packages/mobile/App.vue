@@ -14,8 +14,8 @@ export default {
 
 <style>
 page {
-  background-color: #09090b;
-  color: #f4f4f5;
+  background-color: #f4f4f5;
+  color: #18181b;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 

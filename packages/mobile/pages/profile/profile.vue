@@ -82,7 +82,7 @@ export default {
 <style scoped>
 .container {
   padding: 32rpx;
-  background-color: #09090b;
+  background-color: #f4f4f5;
   min-height: 100vh;
 }
 .header-section {
@@ -91,7 +91,7 @@ export default {
 .title {
   font-size: 32rpx;
   font-weight: bold;
-  color: #f4f4f5;
+  color: #18181b;
   display: block;
 }
 .subtitle {
@@ -101,8 +101,8 @@ export default {
   display: block;
 }
 .form-box {
-  background-color: #18181b;
-  border: 1rpx solid #27272a;
+  background-color: #ffffff;
+  border: 1rpx solid #e4e4e7;
   border-radius: 8rpx;
   padding: 24rpx;
 }
@@ -118,22 +118,22 @@ export default {
 }
 .label {
   font-size: 22rpx;
-  color: #a1a1aa;
+  color: #71717a;
   margin-bottom: 8rpx;
   display: block;
 }
 .input {
-  background-color: #09090b;
-  border: 1rpx solid #27272a;
+  background-color: #f4f4f5;
+  border: 1rpx solid #e4e4e7;
   border-radius: 4rpx;
-  color: #f4f4f5;
+  color: #18181b;
   font-size: 26rpx;
   padding: 16rpx;
   font-family: monospace;
 }
 .save-btn {
-  background-color: #f4f4f5;
-  color: #09090b;
+  background-color: #18181b;
+  color: #ffffff;
   font-size: 26rpx;
   font-weight: bold;
   border-radius: 4rpx;
