@@ -206,7 +206,7 @@ export const IncomeSourcesManager: React.FC<IncomeSourcesManagerProps> = ({
                 onChange={e => setNewType(e.target.value as any)}
                 className="w-full bg-white border border-zinc-300 rounded-sm px-2 py-1 text-xs text-zinc-900 focus:outline-none focus:border-zinc-500"
               >
-                <option value="partner">配偶收入 (妻子/丈夫)</option>
+                <option value="partner">配偶收入</option>
                 <option value="rent">被动房租</option>
                 <option value="interest">理财 / 利息收益</option>
                 <option value="bonus">年终奖 / 季度奖</option>

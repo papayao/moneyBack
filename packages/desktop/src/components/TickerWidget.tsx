@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TickerSnapshot, UserProfile } from '@salary-ticker/core';
+import { TickerSnapshot, UserProfile, IncomeSource } from '@salary-ticker/core';
 import {
   TrendingDown,
   TrendingUp,
@@ -10,6 +10,15 @@ import {
   Check,
   Briefcase,
   Receipt,
+  Plus,
+  Trash2,
+  Gift,
+  Building2,
+  PiggyBank,
+  Users,
+  Sparkles,
+  Coins,
+  X,
 } from 'lucide-react';
 import { RollingNumber } from './RollingNumber';
 import { BackgroundBeamsWithCollision } from './ui/background-beams-with-collision';
@@ -19,6 +28,11 @@ interface TickerWidgetProps {
   profile: UserProfile;
   isPrivacyMode: boolean;
   onUpdateProfile?: (profile: UserProfile) => void;
+  incomeSources?: IncomeSource[];
+  onAddIncomeSource?: (source: IncomeSource) => void;
+  onRemoveIncomeSource?: (id: number) => void;
+  onToggleAmortize?: (id: number) => void;
+  onInjectWindfall?: (amount: number, title: string, id: number) => void;
 }
 
 export const TickerWidget: React.FC<TickerWidgetProps> = ({
@@ -26,7 +40,56 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
   profile,
   isPrivacyMode,
   onUpdateProfile,
+  incomeSources = [],
+  onAddIncomeSource,
+  onRemoveIncomeSource,
+  onToggleAmortize,
+  onInjectWindfall,
 }) => {
+  const [incomeTab, setIncomeTab] = useState<'streaming' | 'onetime'>('streaming');
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  // New income form states
+  const [newTitle, setNewTitle] = useState('');
+  const [newType, setNewType] = useState<IncomeSource['type']>('partner');
+  const [newMode, setNewMode] = useState<'streaming' | 'one_time'>('streaming');
+  const [newAmount, setNewAmount] = useState('');
+  const [newFrequency, setNewFrequency] = useState<IncomeSource['frequency']>('monthly');
+  const [newIsAmortized, setNewIsAmortized] = useState(false);
+  const [newWorkDays, setNewWorkDays] = useState('21.75');
+  const [newWorkStartTime, setNewWorkStartTime] = useState('09:00');
+  const [newWorkEndTime, setNewWorkEndTime] = useState('18:00');
+
+  const handleAddSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim() || !newAmount || !onAddIncomeSource) return;
+
+    const hasSchedule = Boolean(newWorkStartTime.trim() && newWorkEndTime.trim());
+
+    onAddIncomeSource({
+      id: Date.now(),
+      title: newTitle.trim(),
+      type: newType,
+      mode: newMode,
+      amount: parseFloat(newAmount) || 0,
+      frequency: newFrequency,
+      isAmortized: newMode === 'one_time' ? newIsAmortized : undefined,
+      workDaysPerMonth: hasSchedule
+        ? (parseFloat(newWorkDays) || 21.75)
+        : (newWorkDays ? parseFloat(newWorkDays) : 30),
+      workStartTime: hasSchedule ? newWorkStartTime : undefined,
+      workEndTime: hasSchedule ? newWorkEndTime : undefined,
+      status: 'active',
+    });
+
+    setNewTitle('');
+    setNewAmount('');
+    setNewWorkDays('21.75');
+    setNewWorkStartTime('09:00');
+    setNewWorkEndTime('18:00');
+    setShowAddModal(false);
+  };
+
   const [isEditingSavings, setIsEditingSavings] = useState(false);
   const [editSavingsVal, setEditSavingsVal] = useState(profile.currentSavings.toString());
   const [isEditingTarget, setIsEditingTarget] = useState(false);
@@ -185,68 +248,172 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
           </div>
 
           {/* Right Column: Passive & Family Additional Streams (24/7 全天候与多元流) */}
-          <div className="lg:col-span-6 bg-zinc-50/90 border border-zinc-200/90 rounded-sm p-3 space-y-2.5">
-            <div className="flex items-center justify-between text-[11px] border-b border-zinc-200/60 pb-1.5">
-              <div>
-                <span className="font-semibold text-zinc-800">被动与多元现金流 (自然日持续进账)</span>
-                <p className="text-[10px] text-zinc-400 font-sans mt-0.5">
-                  房租、利息 24/7 自然日持续躺赚；配偶与奖金协同进账
-                </p>
-              </div>
-              <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-sm border border-emerald-200 shrink-0">
-                {snapshot.streamingIncomeItems?.length || 0} 个额外源
-              </span>
-            </div>
-
-            {/* Streaming Additional Items */}
-            {(!snapshot.streamingIncomeItems || snapshot.streamingIncomeItems.length === 0) ? (
-              <div className="py-8 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 rounded-sm">
-                暂无额外现金流，可在下方【额外收入】添加
-              </div>
-            ) : (
-              <div className="space-y-1.5 max-h-56 overflow-y-auto text-xs font-mono">
-                {snapshot.streamingIncomeItems.map(item => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between p-2 bg-white border border-zinc-200/80 rounded-sm"
-                  >
-                    <div className="truncate max-w-[170px]">
-                      <div className="text-[11px] font-sans font-medium text-zinc-800 truncate flex items-center gap-1.5">
-                        <span title={item.title}>{item.title}</span>
-                        <span className={`text-[9px] px-1 py-0.2 rounded-sm font-mono flex items-center gap-1 ${
-                          item.is24x7
-                            ? 'bg-zinc-100 text-zinc-600 border border-zinc-200'
-                            : item.isCurrentlyActive
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-zinc-100 text-zinc-400'
-                        }`}>
-                          {item.isCurrentlyActive && <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>}
-                          {item.is24x7 ? '30天·24h' : `${item.workDaysPerMonth || 21.75}天·${item.workStartTime || '09:00'}-${item.workEndTime || '18:00'}`}
-                        </span>
-                      </div>
-                      <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
-                        今日已入: <strong className="text-zinc-600">+¥{item.todayEarned.toFixed(2)}</strong>
-                      </div>
-                    </div>
-
-                    <div className="text-right shrink-0">
-                      <span className="text-emerald-700 font-semibold text-xs">
-                        +¥{item.ratePerSecond.toFixed(4)}
-                      </span>
-                      <span className="text-[10px] text-zinc-400 block font-sans">
-                        /秒 · ¥{item.amount.toLocaleString()}/{item.frequency === 'annual' ? '年' : '月'}
-                      </span>
-                    </div>
+          <div className="lg:col-span-6 bg-zinc-50/90 border border-zinc-200/90 rounded-sm p-3 space-y-2.5 flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs border-b border-zinc-200/60 pb-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-zinc-800">额外收入</span>
+                  <div className="flex bg-zinc-200/70 p-0.5 rounded-xs text-[10px]">
+                    <button
+                      onClick={() => setIncomeTab('streaming')}
+                      className={`px-1.5 py-0.5 rounded-xs transition font-medium ${
+                        incomeTab === 'streaming'
+                          ? 'bg-white text-zinc-900 shadow-2xs'
+                          : 'text-zinc-600 hover:text-zinc-900'
+                      }`}
+                    >
+                      按秒流式 ({snapshot.streamingIncomeItems?.length || 0})
+                    </button>
+                    <button
+                      onClick={() => setIncomeTab('onetime')}
+                      className={`px-1.5 py-0.5 rounded-xs transition font-medium ${
+                        incomeTab === 'onetime'
+                          ? 'bg-white text-zinc-900 shadow-2xs'
+                          : 'text-zinc-600 hover:text-zinc-900'
+                      }`}
+                    >
+                      一次性奖金 ({snapshot.oneTimeIncomes?.length || 0})
+                    </button>
                   </div>
-                ))}
+                </div>
+
+                {/* Top Right Add Button */}
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="flex items-center gap-1 px-2 py-0.5 text-xs text-zinc-700 hover:text-zinc-900 bg-white hover:bg-zinc-100 rounded-sm border border-zinc-200 shadow-2xs transition font-medium cursor-pointer"
+                  title="添加新收入项"
+                >
+                  <Plus className="w-3.5 h-3.5 text-zinc-600" />
+                  <span>添加</span>
+                </button>
               </div>
-            )}
+
+              {/* Streaming Additional Items Tab */}
+              {incomeTab === 'streaming' && (
+                (!snapshot.streamingIncomeItems || snapshot.streamingIncomeItems.length === 0) ? (
+                  <div className="py-8 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 rounded-sm">
+                    暂无流式现金流，点击右上角【添加】录入
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 max-h-56 overflow-y-auto text-xs font-mono">
+                    {snapshot.streamingIncomeItems.map(item => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-2 bg-white border border-zinc-200/80 rounded-sm hover:border-zinc-300 transition group"
+                      >
+                        <div className="truncate max-w-[170px]">
+                          <div className="text-[11px] font-sans font-medium text-zinc-800 truncate flex items-center gap-1.5">
+                            <span title={item.title}>{item.title}</span>
+                            <span className={`text-[9px] px-1 py-0.2 rounded-sm font-mono flex items-center gap-1 ${
+                              item.is24x7
+                                ? 'bg-zinc-100 text-zinc-600 border border-zinc-200'
+                                : item.isCurrentlyActive
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-zinc-100 text-zinc-400'
+                            }`}>
+                              {item.isCurrentlyActive && <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>}
+                              {item.is24x7 ? '30天·24h' : `${item.workDaysPerMonth || 21.75}天·${item.workStartTime || '09:00'}-${item.workEndTime || '18:00'}`}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                            今日已入: <strong className="text-zinc-600">+¥{item.todayEarned.toFixed(2)}</strong>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="text-right">
+                            <span className="text-emerald-700 font-semibold text-xs font-mono">
+                              +¥{item.ratePerSecond.toFixed(4)}
+                            </span>
+                            <span className="text-[10px] text-zinc-400 block font-sans">
+                              /秒 · ¥{item.amount.toLocaleString()}/{item.frequency === 'annual' ? '年' : '月'}
+                            </span>
+                          </div>
+                          {onRemoveIncomeSource && (
+                            <button
+                              onClick={() => onRemoveIncomeSource(item.id)}
+                              className="opacity-0 group-hover:opacity-100 text-zinc-300 hover:text-rose-600 p-1 transition rounded-xs"
+                              title="删除此收入项"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+
+              {/* One-time Bonus Tab */}
+              {incomeTab === 'onetime' && (
+                (!snapshot.oneTimeIncomes || snapshot.oneTimeIncomes.length === 0) ? (
+                  <div className="py-8 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 rounded-sm">
+                    暂无一次性奖金项，点击右上角【添加】录入年终奖或退税
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 max-h-56 overflow-y-auto text-xs">
+                    {snapshot.oneTimeIncomes.map(item => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-2 bg-white border border-zinc-200/80 rounded-sm hover:border-zinc-300 transition group"
+                      >
+                        <div>
+                          <div className="text-[11px] font-sans font-medium text-zinc-800 flex items-center gap-1.5">
+                            <Gift className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                            <span>{item.title}</span>
+                            <span className="text-[9px] px-1 py-0.2 rounded-sm bg-rose-50 text-rose-700 border border-rose-200 font-mono">
+                              待处理奖金
+                            </span>
+                          </div>
+                          <div className="text-xs font-mono font-semibold text-zinc-800 mt-0.5">
+                            +¥{item.amount.toLocaleString()}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          {onInjectWindfall && (
+                            <button
+                              onClick={() => onInjectWindfall(item.amount, item.title, item.id!)}
+                              className="px-2 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xs transition font-medium cursor-pointer"
+                              title="计入当前总存钱存款"
+                            >
+                              注入资产
+                            </button>
+                          )}
+                          {onToggleAmortize && (
+                            <button
+                              onClick={() => onToggleAmortize(item.id!)}
+                              className="px-2 py-0.5 text-[10px] bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 rounded-xs transition font-medium cursor-pointer"
+                              title="按一年平摊进日常每秒时钟"
+                            >
+                              平摊至秒
+                            </button>
+                          )}
+                          {onRemoveIncomeSource && (
+                            <button
+                              onClick={() => onRemoveIncomeSource(item.id!)}
+                              className="opacity-0 group-hover:opacity-100 text-zinc-300 hover:text-rose-600 p-1 transition"
+                              title="删除"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+            </div>
 
             {/* Bottom summary banner */}
             <div className="flex items-center justify-between text-[11px] bg-white p-2 rounded-sm border border-zinc-200/70 text-zinc-600">
-              <span>今日多元额外入账合计:</span>
+              <span>{incomeTab === 'streaming' ? '今日多元额外入账合计:' : '流式月增总折合:'}</span>
               <span className="font-semibold font-mono text-emerald-700">
-                +¥{snapshot.additionalIncomeToday.toFixed(2)}
+                {incomeTab === 'streaming'
+                  ? `+¥${snapshot.additionalIncomeToday.toFixed(2)}`
+                  : `+¥${Math.round(snapshot.additionalIncomeMonthly).toLocaleString()}/月`}
               </span>
             </div>
           </div>
@@ -528,6 +695,173 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Add Income Modal Dialog */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-zinc-200 rounded-md w-full max-w-md shadow-xl text-zinc-900 animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-4 border-b border-zinc-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Plus className="w-4 h-4 text-zinc-700" />
+                <h3 className="text-sm font-semibold text-zinc-900">添加额外收入项</h3>
+              </div>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="text-zinc-400 hover:text-zinc-600 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddSubmit} className="p-4 space-y-3.5">
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs text-zinc-600 mb-1">收入性质</label>
+                  <select
+                    value={newMode}
+                    onChange={e => {
+                      const m = e.target.value as any;
+                      setNewMode(m);
+                      if (m === 'one_time') {
+                        setNewType('bonus');
+                        setNewFrequency('once');
+                      } else {
+                        setNewType('partner');
+                        setNewFrequency('monthly');
+                      }
+                    }}
+                    className="w-full bg-zinc-50 border border-zinc-300 rounded-sm px-2.5 py-1.5 text-xs text-zinc-900 focus:outline-none focus:border-zinc-500"
+                  >
+                    <option value="streaming">持续收入 (按秒计费)</option>
+                    <option value="one_time">一次性奖金</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-zinc-600 mb-1">收入分类</label>
+                  <select
+                    value={newType}
+                    onChange={e => setNewType(e.target.value as any)}
+                    className="w-full bg-zinc-50 border border-zinc-300 rounded-sm px-2.5 py-1.5 text-xs text-zinc-900 focus:outline-none focus:border-zinc-500"
+                  >
+                    <option value="partner">配偶收入</option>
+                    <option value="rent">被动房租</option>
+                    <option value="interest">理财 / 利息收益</option>
+                    <option value="bonus">年终奖 / 季度奖</option>
+                    <option value="windfall">退税 / 偶然所得</option>
+                    <option value="side_hustle">副业兼职</option>
+                    <option value="custom">其他自定义</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs text-zinc-600 mb-1">收入名称</label>
+                  <input
+                    type="text"
+                    placeholder="例如：妻子月薪 / 投资房租"
+                    value={newTitle}
+                    onChange={e => setNewTitle(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-300 rounded-sm px-2.5 py-1.5 text-xs text-zinc-900 focus:outline-none focus:border-zinc-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-zinc-600 mb-1">金额 (元)</label>
+                  <input
+                    type="number"
+                    placeholder="5000"
+                    value={newAmount}
+                    onChange={e => setNewAmount(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-300 rounded-sm px-2.5 py-1.5 text-xs text-zinc-900 font-mono focus:outline-none focus:border-zinc-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              {newMode === 'streaming' && (
+                <div className="p-2.5 bg-zinc-50/80 border border-zinc-200 rounded-sm space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-zinc-800 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-zinc-600" />
+                      <span>工时设置 (选填：未填则默认 30 天全天候)</span>
+                    </label>
+                    <span className="text-[10px] text-zinc-400 font-mono">未填按30天24h进账</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[11px] text-zinc-500 mb-0.5">月计费天数 (天)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="默认 30"
+                        value={newWorkDays}
+                        onChange={e => setNewWorkDays(e.target.value)}
+                        className="w-full bg-white border border-zinc-300 rounded-sm px-2 py-1 text-xs text-zinc-900 font-mono focus:outline-none focus:border-zinc-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-zinc-500 mb-0.5">上班时间</label>
+                      <input
+                        type="time"
+                        value={newWorkStartTime}
+                        onChange={e => setNewWorkStartTime(e.target.value)}
+                        className="w-full bg-white border border-zinc-300 rounded-sm px-2 py-1 text-xs text-zinc-900 font-mono focus:outline-none focus:border-zinc-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-zinc-500 mb-0.5">下班时间</label>
+                      <input
+                        type="time"
+                        value={newWorkEndTime}
+                        onChange={e => setNewWorkEndTime(e.target.value)}
+                        className="w-full bg-white border border-zinc-300 rounded-sm px-2 py-1 text-xs text-zinc-900 font-mono focus:outline-none focus:border-zinc-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="text-[10px] text-zinc-500 leading-relaxed">
+                    💡 提示：未填上下班时间默认每月 30 天 24 小时全天候进账（如房租、利息）；填写上下班时间则按工作时段与天数流式计费（如配偶工薪、副业）。
+                  </div>
+                </div>
+              )}
+
+              {newMode === 'one_time' && (
+                <div className="flex items-center gap-2 bg-zinc-50 p-2.5 rounded-sm border border-zinc-200 text-xs">
+                  <input
+                    type="checkbox"
+                    id="modalAmortizeCheck"
+                    checked={newIsAmortized}
+                    onChange={e => setNewIsAmortized(e.target.checked)}
+                    className="rounded-sm border-zinc-300 text-zinc-900 focus:ring-0"
+                  />
+                  <label htmlFor="modalAmortizeCheck" className="text-zinc-700 cursor-pointer">
+                    按年平摊到每秒时钟计费（加速日常时钟，而不作为单笔一次性到账）
+                  </label>
+                </div>
+              )}
+
+              <div className="pt-2 flex justify-end gap-2 border-t border-zinc-200">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-800 cursor-pointer"
+                >
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 text-xs bg-zinc-900 hover:bg-zinc-800 text-white font-medium rounded-sm cursor-pointer"
+                >
+                  保存收入项
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

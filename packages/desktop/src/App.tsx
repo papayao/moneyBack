@@ -11,7 +11,6 @@ import { Header } from './components/Header';
 import { TickerWidget } from './components/TickerWidget';
 import { TrendChartCard } from './components/TrendChartCard';
 import { LiabilitiesManager } from './components/LiabilitiesManager';
-import { IncomeSourcesManager } from './components/IncomeSourcesManager';
 import { BillImportModal } from './components/BillImportModal';
 import { ProfileModal } from './components/ProfileModal';
 import { MiniFloatWindow } from './components/MiniFloatWindow';
@@ -208,12 +207,17 @@ export function App() {
       />
 
       <main className="flex-1 max-w-3xl w-full mx-auto p-4 md:p-6 space-y-5">
-        {/* Live Ticker & Savings Target */}
+        {/* Live Ticker, Multi-Stream Income & Savings Target (工薪与额外收入合并单元) */}
         <TickerWidget
           snapshot={snapshot}
           profile={profile}
           isPrivacyMode={isPrivacyMode}
           onUpdateProfile={setProfile}
+          incomeSources={incomeSources}
+          onAddIncomeSource={handleAddIncomeSource}
+          onRemoveIncomeSource={handleRemoveIncomeSource}
+          onInjectWindfall={handleInjectWindfall}
+          onToggleAmortize={handleToggleAmortize}
         />
 
         {/* Unified Debt Manager & Live Payoff Tracker (负债记录进度条与清单合并单元) */}
@@ -222,16 +226,6 @@ export function App() {
           snapshot={snapshot}
           onAddLiability={handleAddLiability}
           onRemoveLiability={handleRemoveLiability}
-          isPrivacyMode={isPrivacyMode}
-        />
-
-        {/* Custom Income Sources (配偶/房租/利息/年终奖) */}
-        <IncomeSourcesManager
-          incomeSources={incomeSources}
-          onAddIncomeSource={handleAddIncomeSource}
-          onRemoveIncomeSource={handleRemoveIncomeSource}
-          onInjectWindfall={handleInjectWindfall}
-          onToggleAmortize={handleToggleAmortize}
           isPrivacyMode={isPrivacyMode}
         />
 
