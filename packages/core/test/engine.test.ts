@@ -84,6 +84,19 @@ describe('SalaryTicker Engine', () => {
     // Total expenses: 490,000 + 1,000,000 = 1,490,000
     expect(snapshot.totalExpensesLive).toBe(1490000);
   });
+
+  it('includes additional custom income sources (partner, rent, interest)', () => {
+    const afternoonDate = new Date(2026, 10, 10, 15, 0, 0); // 5h worked
+    const incomeSources = [
+      { id: 1, title: '妻子工资', type: 'partner' as const, amount: 10875, frequency: 'monthly' as const },
+      { id: 2, title: '投资房租', type: 'rent' as const, amount: 3000, frequency: 'monthly' as const },
+    ];
+    // Monthly salary 21750 + 10875 + 3000 = 35625
+    const snapshot = calculateTickerSnapshot(mockProfile, mockLiabilities, afternoonDate, [], incomeSources);
+    expect(snapshot.additionalIncomeMonthly).toBe(13875);
+    expect(snapshot.totalMonthlyIncome).toBe(35625);
+    expect(snapshot.earnedToday).toBeGreaterThan(625);
+  });
 });
 
 describe('Bill Parsers', () => {

@@ -3,12 +3,14 @@ import {
   UserProfile,
   Liability,
   Transaction,
+  IncomeSource,
   calculateTickerSnapshot,
   TickerSnapshot,
 } from '@salary-ticker/core';
 import { Header } from './components/Header';
 import { TickerWidget } from './components/TickerWidget';
 import { LiabilitiesManager } from './components/LiabilitiesManager';
+import { IncomeSourcesManager } from './components/IncomeSourcesManager';
 import { BillImportModal } from './components/BillImportModal';
 import { ProfileModal } from './components/ProfileModal';
 import { MiniFloatWindow } from './components/MiniFloatWindow';
@@ -48,6 +50,33 @@ const DEFAULT_LIABILITIES: Liability[] = [
   },
 ];
 
+const DEFAULT_INCOME_SOURCES: IncomeSource[] = [
+  {
+    id: 1,
+    type: 'partner',
+    title: '配偶月薪 (妻子/丈夫)',
+    amount: 15000,
+    frequency: 'monthly',
+    status: 'active',
+  },
+  {
+    id: 2,
+    type: 'rent',
+    title: '投资房租金',
+    amount: 3200,
+    frequency: 'monthly',
+    status: 'active',
+  },
+  {
+    id: 3,
+    type: 'interest',
+    title: '存款理财利息',
+    amount: 600,
+    frequency: 'monthly',
+    status: 'active',
+  },
+];
+
 export function App() {
   const [profile, setProfile] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('salary_ticker_profile');
@@ -57,6 +86,11 @@ export function App() {
   const [liabilities, setLiabilities] = useState<Liability[]>(() => {
     const saved = localStorage.getItem('salary_ticker_liabilities');
     return saved ? JSON.parse(saved) : DEFAULT_LIABILITIES;
+  });
+
+  const [incomeSources, setIncomeSources] = useState<IncomeSource[]>(() => {
+    const saved = localStorage.getItem('salary_ticker_income_sources');
+    return saved ? JSON.parse(saved) : DEFAULT_INCOME_SOURCES;
   });
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
@@ -71,7 +105,7 @@ export function App() {
 
   // Live snapshot calculation
   const [snapshot, setSnapshot] = useState<TickerSnapshot>(() =>
-    calculateTickerSnapshot(profile, liabilities, new Date(), transactions)
+    calculateTickerSnapshot(profile, liabilities, new Date(), transactions, incomeSources)
   );
 
   useEffect(() => {
@@ -83,18 +117,22 @@ export function App() {
   }, [liabilities]);
 
   useEffect(() => {
+    localStorage.setItem('salary_ticker_income_sources', JSON.stringify(incomeSources));
+  }, [incomeSources]);
+
+  useEffect(() => {
     localStorage.setItem('salary_ticker_txs', JSON.stringify(transactions));
   }, [transactions]);
 
   // Real-time ticking (every 200ms for ultra-smooth rolling odometer)
   useEffect(() => {
     const update = () => {
-      setSnapshot(calculateTickerSnapshot(profile, liabilities, new Date(), transactions));
+      setSnapshot(calculateTickerSnapshot(profile, liabilities, new Date(), transactions, incomeSources));
     };
     update();
     const timer = setInterval(update, 200);
     return () => clearInterval(timer);
-  }, [profile, liabilities, transactions]);
+  }, [profile, liabilities, transactions, incomeSources]);
 
   const handleAddLiability = (item: Liability) => {
     setLiabilities(prev => [item, ...prev]);
@@ -102,6 +140,14 @@ export function App() {
 
   const handleRemoveLiability = (id: number) => {
     setLiabilities(prev => prev.filter(l => l.id !== id));
+  };
+
+  const handleAddIncomeSource = (source: IncomeSource) => {
+    setIncomeSources(prev => [source, ...prev]);
+  };
+
+  const handleRemoveIncomeSource = (id: number) => {
+    setIncomeSources(prev => prev.filter(s => s.id !== id));
   };
 
   const handleImportTransactions = (newTxs: Transaction[]) => {
@@ -140,6 +186,14 @@ export function App() {
           profile={profile}
           isPrivacyMode={isPrivacyMode}
           onUpdateProfile={setProfile}
+        />
+
+        {/* Custom Income Sources (配偶/房租/利息) */}
+        <IncomeSourcesManager
+          incomeSources={incomeSources}
+          onAddIncomeSource={handleAddIncomeSource}
+          onRemoveIncomeSource={handleRemoveIncomeSource}
+          isPrivacyMode={isPrivacyMode}
         />
 
         {/* Liabilities */}

@@ -95,8 +95,8 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
         <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
           <span className="uppercase tracking-wider font-medium">今日净收入 (扣除日均负债)</span>
           <span className="font-mono text-zinc-500">
-            {snapshot.salaryPerSecond > 0
-              ? `${(snapshot.salaryPerSecond * 3600).toFixed(1)} 元/时`
+            {snapshot.totalIncomePerSecond > 0
+              ? `综合时薪：${(snapshot.totalIncomePerSecond * 3600).toFixed(1)} 元/时`
               : '0.0 元/时'}
           </span>
         </div>
@@ -108,9 +108,6 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
               snapshot.isNetPositive ? 'text-emerald-600' : 'text-rose-600'
             }`}
           />
-          <span className="text-xs text-zinc-500 font-mono">
-            {snapshot.isNetPositive ? '已实现今日净盈余' : '正在对冲今日硬性负债'}
-          </span>
         </div>
 
         {/* Breakdown Row */}
@@ -120,7 +117,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
               <TrendingUp className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs text-zinc-500">今日劳动所得</div>
+              <div className="text-xs text-zinc-500">今日劳动与多元收益</div>
               <div className="text-sm font-semibold font-mono text-zinc-800">
                 <RollingNumber value={formatMoney(snapshot.earnedToday)} />
               </div>
@@ -149,7 +146,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
             <div className="flex items-center justify-between text-xs mb-2">
               <div className="flex items-center gap-1.5 text-zinc-700 font-medium">
                 <Briefcase className="w-3.5 h-3.5 text-zinc-600" />
-                <span>总劳动所得 (累计)</span>
+                <span>总劳动与多元所得 (累计)</span>
               </div>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-zinc-100 text-zinc-600 border border-zinc-200">
                 秒级递增中

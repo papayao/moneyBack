@@ -1,4 +1,4 @@
-import { Liability, TickerSnapshot, UserProfile, Transaction } from './types.js';
+import { Liability, TickerSnapshot, UserProfile, Transaction, IncomeSource } from './types.js';
 
 export function parseTimeToSeconds(timeStr: string): number {
   const [hours, minutes] = timeStr.split(':').map(Number);
@@ -81,22 +81,43 @@ export function calculateWorkedSecondsToday(profile: UserProfile, now = new Date
   };
 }
 
+export function calculateAdditionalMonthlyIncome(sources: IncomeSource[] = []): number {
+  return sources
+    .filter(s => (s.status ?? 'active') === 'active')
+    .reduce((sum, s) => {
+      const amt = s.amount || 0;
+      return sum + (s.frequency === 'annual' ? amt / 12 : amt);
+    }, 0);
+}
+
 export function calculateTickerSnapshot(
   profile: UserProfile,
   liabilities: Liability[],
   now = new Date(),
-  transactions: Transaction[] = []
+  transactions: Transaction[] = [],
+  incomeSources: IncomeSource[] = []
 ): TickerSnapshot {
   const salaryPerSec = calculateSalaryPerSecond(profile);
+  const dailyWorkSeconds = calculateDailyWorkingSeconds(profile);
+  const totalMonthlySeconds = profile.workDaysPerMonth * dailyWorkSeconds;
+
+  // Additional income (多元自定义收入: 配偶工资 / 房租 / 利息 / 副业)
+  const additionalIncomeMonthly = calculateAdditionalMonthlyIncome(incomeSources);
+  const totalMonthlyIncome = profile.monthlySalary + additionalIncomeMonthly;
+  const additionalPerSecond =
+    totalMonthlySeconds > 0 ? additionalIncomeMonthly / totalMonthlySeconds : 0;
+  const totalIncomePerSecond = salaryPerSec + additionalPerSecond;
+
   const dailyDebt = calculateDailyDebtCost(liabilities, profile.workDaysPerMonth);
   const { workedSeconds, isWorkingTime, isLunchBreak } = calculateWorkedSecondsToday(profile, now);
 
-  const earnedToday = workedSeconds * salaryPerSec;
+  const additionalIncomeToday = workedSeconds * additionalPerSecond;
+  const earnedToday = workedSeconds * totalIncomePerSecond;
   const netToday = earnedToday - dailyDebt;
 
-  // Savings target hours and minutes
+  // Savings target hours and minutes (accelerated by total income)
   const remainingSavings = Math.max(0, profile.targetSavings - profile.currentSavings);
-  const totalRemainingSeconds = salaryPerSec > 0 ? remainingSavings / salaryPerSec : 0;
+  const totalRemainingSeconds = totalIncomePerSecond > 0 ? remainingSavings / totalIncomePerSecond : 0;
   const remHours = Math.floor(totalRemainingSeconds / 3600);
   const remMinutes = Math.floor((totalRemainingSeconds % 3600) / 60);
   const remainingTimeFormatted = `${remHours} 小时 ${remMinutes} 分钟`;
@@ -118,18 +139,16 @@ export function calculateTickerSnapshot(
   const totalDebtPaid = Math.max(0, totalDebt - totalDebtRemainingLive);
   const debtPayoffPercent = totalDebt > 0 ? (totalDebtPaid / totalDebt) * 100 : 100;
 
-  const hourlySalary = salaryPerSec * 3600;
-  const hoursToDebtFree = hourlySalary > 0 ? totalDebtRemainingLive / hourlySalary : 0;
-  const dailyWorkSeconds = calculateDailyWorkingSeconds(profile);
+  const hourlyTotalIncome = totalIncomePerSecond * 3600;
+  const hoursToDebtFree = hourlyTotalIncome > 0 ? totalDebtRemainingLive / hourlyTotalIncome : 0;
   const annualWorkHours = (profile.workDaysPerMonth * dailyWorkSeconds * 12) / 3600;
   const yearsToDebtFree = annualWorkHours > 0 ? hoursToDebtFree / annualWorkHours : 0;
 
-  // Total Labor Earnings (总劳动所得 = 历史基准 + 今日实时所赚)
+  // Total Labor Earnings (总所得 = 历史基准 + 今日实时所赚)
   const baseLaborEarnings = profile.baseLaborEarnings ?? 500000;
   const totalLaborEarningsLive = baseLaborEarnings + earnedToday;
 
   // Total Expenses (总花费 = 累计生活日常开销 + 负债总额)
-  // 如果没有单独指定 baseLivingExpense，则默认历史生活开销 = 累计所得 - 当前结余存款
   const txExpenses = transactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -144,6 +163,10 @@ export function calculateTickerSnapshot(
     netToday: Math.round(netToday * 100) / 100,
     isNetPositive: netToday >= 0,
     salaryPerSecond: salaryPerSec,
+    totalIncomePerSecond,
+    totalMonthlyIncome,
+    additionalIncomeMonthly: Math.round(additionalIncomeMonthly * 100) / 100,
+    additionalIncomeToday: Math.round(additionalIncomeToday * 100) / 100,
     hoursWorkedToday: Math.round((workedSeconds / 3600) * 100) / 100,
     hoursRemainingToSavingsTarget: Math.round(hoursRemaining * 10) / 10,
     remainingTimeFormatted,

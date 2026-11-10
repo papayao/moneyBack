@@ -26,7 +26,6 @@
         {{ formattedNetAmount }}
       </text>
       <text class="hero-sub mono-num">
-        {{ snapshot.isNetPositive ? '今日已实现净盈余' : '正在对冲今日硬性负债' }}
         ({{ (snapshot.salaryPerSecond * 3600).toFixed(1) }} 元/时)
       </text>
     </view>
@@ -143,6 +142,11 @@ export default {
           status: 'active',
         },
       ],
+      incomeSources: [
+        { id: 1, type: 'partner', title: '配偶月薪 (妻子/丈夫)', amount: 15000, frequency: 'monthly', status: 'active' },
+        { id: 2, type: 'rent', title: '投资房租金', amount: 3200, frequency: 'monthly', status: 'active' },
+        { id: 3, type: 'interest', title: '理财利息', amount: 600, frequency: 'monthly', status: 'active' },
+      ],
       snapshot: {
         earnedToday: 0,
         dailyDebtCost: 0,
@@ -198,7 +202,13 @@ export default {
       }
     },
     tick() {
-      this.snapshot = calculateTickerSnapshot(this.profile, this.liabilities, new Date());
+      this.snapshot = calculateTickerSnapshot(
+        this.profile,
+        this.liabilities,
+        new Date(),
+        [],
+        this.incomeSources
+      );
     },
     togglePrivacy() {
       this.isPrivacy = !this.isPrivacy;

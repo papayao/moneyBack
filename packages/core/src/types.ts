@@ -23,6 +23,15 @@ export interface Liability {
   status?: 'active' | 'finished';
 }
 
+export interface IncomeSource {
+  id?: number;
+  title: string;
+  type: 'partner' | 'rent' | 'interest' | 'side_hustle' | 'custom';
+  amount: number;
+  frequency: 'monthly' | 'annual';
+  status?: 'active' | 'paused';
+}
+
 export interface Transaction {
   id?: number;
   source: 'wechat' | 'alipay' | 'manual';
@@ -51,6 +60,11 @@ export interface TickerSnapshot {
   todayDebtRemainingLive: number;
   hoursToDebtFree: number;
   yearsToDebtFree: number;
+  // Custom Income Sources (多元收入: 配偶/房租/利息/副业)
+  additionalIncomeMonthly: number;
+  additionalIncomeToday: number;
+  totalIncomePerSecond: number;
+  totalMonthlyIncome: number;
   // Lifetime totals
   totalLaborEarningsLive: number;
   totalExpensesLive: number; // 生活消费 + 负债支出
