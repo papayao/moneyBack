@@ -114,14 +114,9 @@ export const TrendChartCard: React.FC<TrendChartCardProps> = ({
     <div className="border border-zinc-200/90 bg-white p-4 rounded-md shadow-2xs space-y-3">
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-zinc-100">
-        <div>
-          <div className="flex items-center gap-2">
-            <ChartIcon className="w-4 h-4 text-zinc-700" />
-            <h3 className="text-sm font-semibold text-zinc-900">收支与进度趋势走向</h3>
-          </div>
-          <p className="text-xs text-zinc-500 mt-0.5">
-            按分时/天/月动态观测收入、支出、负债消减与存钱目标演变
-          </p>
+        <div className="flex items-center gap-2">
+          <ChartIcon className="w-4 h-4 text-zinc-700" />
+          <h3 className="text-sm font-semibold text-zinc-900">收支趋势</h3>
         </div>
 
         {/* Granularity & Mode Selectors */}

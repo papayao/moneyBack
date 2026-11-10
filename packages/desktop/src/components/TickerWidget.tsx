@@ -160,11 +160,11 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
           <div className="lg:col-span-6 flex flex-col justify-between space-y-4">
             <div>
               <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
-                <span className="uppercase tracking-wider font-medium">今日净收入 (扣除日均负债)</span>
+                <span className="font-medium">今日净收入</span>
                 <span className="font-mono text-zinc-500">
                   {snapshot.totalIncomePerSecond > 0
-                    ? `综合时薪：${(snapshot.totalIncomePerSecond * 3600).toFixed(1)} 元/时`
-                    : '0.0 元/时'}
+                    ? `¥${(snapshot.totalIncomePerSecond * 3600).toFixed(1)}/时`
+                    : '¥0.0/时'}
                 </span>
               </div>
 
@@ -176,37 +176,33 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                   }`}
                 />
               </div>
-
-              <div className="text-xs text-zinc-500 font-mono">
-                {snapshot.isNetPositive ? '已实现今日净盈余' : '正在对冲今日硬性负债'}
-              </div>
             </div>
 
-            {/* Isolated Labor Salary Unit (单独提出来的主业工薪) */}
+            {/* Isolated Labor Salary Unit */}
             <div className="bg-white/90 border border-zinc-200/90 rounded-sm p-3 space-y-2">
               <div className="flex items-center justify-between text-[11px] pb-1.5 border-b border-zinc-100">
                 <div className="flex items-center gap-1.5 font-semibold text-zinc-900">
                   <Briefcase className="w-3.5 h-3.5 text-zinc-700" />
-                  <span>主业劳动工薪 (独立核算)</span>
+                  <span>主业工薪</span>
                 </div>
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-zinc-100 text-zinc-600 border border-zinc-200">
-                  {profile.workDaysPerMonth}天/月 · 仅工时计费
+                  {profile.workDaysPerMonth}天/月
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-xs text-zinc-500">
-                    时薪 <strong className="text-zinc-800 font-mono">¥{snapshot.salaryPerHour}</strong> 元/时
+                    时薪 <strong className="text-zinc-800 font-mono">¥{snapshot.salaryPerHour}</strong>
                     <span className="text-zinc-400 text-[10px] ml-1">(+¥{snapshot.salaryPerSecond.toFixed(3)}/秒)</span>
                   </div>
                   <div className="text-[11px] text-zinc-400 mt-0.5">
-                    月薪基准: ¥{profile.monthlySalary.toLocaleString()}
+                    月薪: ¥{profile.monthlySalary.toLocaleString()}
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <div className="text-[10px] text-zinc-400">今日打工入账</div>
+                  <div className="text-[10px] text-zinc-400">今日工薪</div>
                   <div className="text-sm font-bold font-mono text-emerald-700">
                     <RollingNumber value={formatMoney(snapshot.mainLaborEarnedToday)} />
                   </div>
@@ -217,7 +213,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                         : 'bg-zinc-100 text-zinc-500'
                     }`}
                   >
-                    {snapshot.isWorkingTime ? '工作中计费中' : '已下班暂停'}
+                    {snapshot.isWorkingTime ? '工作中' : '已下班'}
                   </span>
                 </div>
               </div>
@@ -228,7 +224,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
               <div className="flex items-center gap-2 p-1.5 bg-zinc-50/70 rounded-sm border border-zinc-200/60">
                 <TrendingUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                 <div>
-                  <div className="text-[10px] text-zinc-400">今日全部总收益</div>
+                  <div className="text-[10px] text-zinc-400">今日总收益</div>
                   <div className="text-xs font-semibold font-mono text-zinc-800">
                     <RollingNumber value={formatMoney(snapshot.earnedToday)} />
                   </div>
@@ -238,7 +234,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
               <div className="flex items-center gap-2 p-1.5 bg-zinc-50/70 rounded-sm border border-zinc-200/60">
                 <TrendingDown className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                 <div>
-                  <div className="text-[10px] text-zinc-400">今日负债摊销</div>
+                  <div className="text-[10px] text-zinc-400">今日负债</div>
                   <div className="text-xs font-semibold font-mono text-zinc-800">
                     <RollingNumber value={formatMoney(snapshot.dailyDebtCost)} />
                   </div>
@@ -420,19 +416,16 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
         </div>
       </BackgroundBeamsWithCollision>
 
-      {/* Total Career Earnings & Total Lifetime Expenses (含负债) */}
+      {/* Total Career Earnings & Total Lifetime Expenses */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {/* Left: 总劳动所得 */}
+        {/* Left: 总所得 */}
         <div className="border border-zinc-200/90 bg-white p-4 rounded-md shadow-2xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-xs mb-2">
               <div className="flex items-center gap-1.5 text-zinc-700 font-medium">
                 <Briefcase className="w-3.5 h-3.5 text-zinc-600" />
-                <span>总劳动与多元所得 (累计)</span>
+                <span>总所得</span>
               </div>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-zinc-100 text-zinc-600 border border-zinc-200">
-                秒级递增中
-              </span>
             </div>
 
             {isEditingEarnings ? (
@@ -462,7 +455,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                   setIsEditingEarnings(true);
                 }}
                 className="group flex items-baseline gap-1.5 cursor-pointer py-1"
-                title="点击调整历史累计劳动所得基准值"
+                title="点击调整基准值"
               >
                 <div className="text-2xl font-bold font-mono text-zinc-900 group-hover:text-zinc-700 transition">
                   <RollingNumber value={formatMoney(snapshot.totalLaborEarningsLive)} />
@@ -473,24 +466,21 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
           </div>
 
           <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-100 text-[11px] text-zinc-500">
-            <span>基准所得: ¥{(profile.baseLaborEarnings ?? 500000).toLocaleString()}</span>
+            <span>基准: ¥{(profile.baseLaborEarnings ?? 500000).toLocaleString()}</span>
             <span className="text-emerald-700 font-mono font-medium">
-              今日贡献 +¥{snapshot.earnedToday.toFixed(2)}
+              今日 +¥{snapshot.earnedToday.toFixed(2)}
             </span>
           </div>
         </div>
 
-        {/* Right: 总花费 (含负债) */}
+        {/* Right: 总花费 */}
         <div className="border border-zinc-200/90 bg-white p-4 rounded-md shadow-2xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-xs mb-2">
               <div className="flex items-center gap-1.5 text-zinc-700 font-medium">
                 <Receipt className="w-3.5 h-3.5 text-zinc-600" />
-                <span>总花费 (含生活与全部负债)</span>
+                <span>总花费</span>
               </div>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-rose-50 text-rose-700 border border-rose-200">
-                含负债支出
-              </span>
             </div>
 
             {isEditingLiving ? (
@@ -521,7 +511,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                   setIsEditingLiving(true);
                 }}
                 className="group flex items-baseline gap-1.5 cursor-pointer py-1"
-                title="点击微调生活消费基准 (负债部分自动计算)"
+                title="点击调整生活消费基准"
               >
                 <div className="text-2xl font-bold font-mono text-zinc-900 group-hover:text-zinc-700 transition">
                   <RollingNumber value={formatMoney(snapshot.totalExpensesLive)} />
@@ -532,9 +522,9 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
           </div>
 
           <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-100 text-[11px] text-zinc-500">
-            <span>生活消费: ¥{snapshot.totalLivingExpenses.toLocaleString()}</span>
+            <span>生活: ¥{snapshot.totalLivingExpenses.toLocaleString()}</span>
             <span className="text-rose-600 font-mono font-medium">
-              负债总额: ¥{snapshot.totalDebt.toLocaleString()}
+              负债: ¥{snapshot.totalDebt.toLocaleString()}
             </span>
           </div>
         </div>
@@ -545,7 +535,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
         <div className="flex items-center justify-between text-xs mb-2.5">
           <div className="flex items-center gap-1.5 text-zinc-800 font-medium">
             <Target className="w-3.5 h-3.5 text-zinc-600" />
-            <span>存钱目标达成进度</span>
+            <span>存钱进度</span>
           </div>
 
           <div className="flex items-center gap-2 font-mono text-zinc-600">
@@ -647,7 +637,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
 
         {/* Quick adjustment buttons */}
         <div className="flex items-center gap-1.5 mb-2.5">
-          <span className="text-[10px] text-zinc-400">快速变动:</span>
+          <span className="text-[10px] text-zinc-400">记账:</span>
           <button
             onClick={() => handleQuickAdjust(500)}
             className="px-1.5 py-0.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-zinc-900 border border-zinc-200 rounded-sm text-[10px] font-mono transition"
@@ -670,7 +660,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
             onClick={() => handleQuickAdjust(-1000)}
             className="px-1.5 py-0.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-rose-600 border border-zinc-200 rounded-sm text-[10px] font-mono transition ml-auto"
           >
-            -1000 (支出)
+            -1000
           </button>
         </div>
 
@@ -683,11 +673,11 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
         </div>
 
         <div className="flex items-center justify-between mt-2.5 text-xs text-zinc-500">
-          <span className="font-mono">{savingsProgress.toFixed(1)}% 已完成</span>
+          <span className="font-mono">{savingsProgress.toFixed(1)}%</span>
           <div className="flex items-center gap-1 font-mono text-zinc-500">
             <Clock className="w-3 h-3 text-zinc-400" />
             <span>
-              还需打工{' '}
+              剩余{' '}
               <strong className="text-zinc-800 font-semibold">
                 {snapshot.remainingTimeFormatted}
               </strong>

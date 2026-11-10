@@ -18,7 +18,7 @@
 
     <!-- Main Hero Live Net Amount -->
     <view class="hero-card">
-      <text class="hero-label">今日净计费 (已对冲日均负债)</text>
+      <text class="hero-label">今日净收入</text>
       <text
         class="hero-amount mono-num"
         :class="snapshot.isNetPositive ? 'text-positive' : 'text-negative'"
@@ -33,26 +33,26 @@
     <!-- Breakdown Cards -->
     <view class="stats-grid">
       <view class="stat-card">
-        <text class="stat-title">今日劳动所得</text>
+        <text class="stat-title">今日工薪</text>
         <text class="stat-value mono-num text-positive">{{ isPrivacy ? '****' : '¥' + snapshot.earnedToday.toFixed(2) }}</text>
       </view>
       <view class="stat-card">
-        <text class="stat-title">今日负债均摊</text>
+        <text class="stat-title">今日负债</text>
         <text class="stat-value mono-num text-negative">{{ isPrivacy ? '****' : '¥' + snapshot.dailyDebtCost.toFixed(2) }}</text>
       </view>
     </view>
 
-    <!-- Lifetime Totals (总劳动所得 & 累计总花费含负债) -->
+    <!-- Lifetime Totals (总所得 & 总花费) -->
     <view class="stats-grid">
       <view class="stat-card" @click="promptEditLaborEarnings">
-        <text class="stat-title">总劳动所得 (点此修改)</text>
+        <text class="stat-title">总所得</text>
         <text class="stat-value mono-num text-positive">
           {{ isPrivacy ? '****' : '¥' + (snapshot.totalLaborEarningsLive ? snapshot.totalLaborEarningsLive.toFixed(2) : '0.00') }}
         </text>
-        <text class="stat-sub mono-num">含今日已赚 +¥{{ snapshot.earnedToday.toFixed(2) }}</text>
+        <text class="stat-sub mono-num">今日 +¥{{ snapshot.earnedToday.toFixed(2) }}</text>
       </view>
       <view class="stat-card">
-        <text class="stat-title">总花费 (含负债)</text>
+        <text class="stat-title">总花费</text>
         <text class="stat-value mono-num text-debt">
           {{ isPrivacy ? '****' : '¥' + (snapshot.totalExpensesLive ? snapshot.totalExpensesLive.toFixed(2) : '0.00') }}
         </text>
@@ -60,39 +60,39 @@
       </view>
     </view>
 
-    <!-- Debt Payoff Progress Bar (负债消减进度) -->
+    <!-- Debt Payoff Progress Bar (负债进度) -->
     <view v-if="snapshot.totalDebt > 0" class="savings-card debt-card">
       <view class="savings-header">
-        <text class="savings-title text-debt">负债实时消减进度</text>
+        <text class="savings-title text-debt">负债情况</text>
         <text class="savings-ratio mono-num text-negative">
-          剩余: {{ isPrivacy ? '****' : '¥' + snapshot.totalDebtRemainingLive.toFixed(2) }}
+          待还: {{ isPrivacy ? '****' : '¥' + snapshot.totalDebtRemainingLive.toFixed(2) }}
         </text>
       </view>
       <view class="progress-track">
         <view class="progress-bar debt-bar" :style="{ width: snapshot.debtPayoffPercent + '%' }"></view>
       </view>
       <view class="savings-footer">
-        <text class="footer-hint mono-num">已还清 {{ snapshot.debtPayoffPercent }}%</text>
-        <text class="footer-hint mono-num">自由还需 {{ snapshot.yearsToDebtFree }} 年</text>
+        <text class="footer-hint mono-num">已清偿 {{ snapshot.debtPayoffPercent }}%</text>
+        <text class="footer-hint mono-num">预计还清 {{ snapshot.yearsToDebtFree }} 年</text>
       </view>
     </view>
 
     <!-- Savings Progress Bar -->
     <view class="savings-card">
       <view class="savings-header">
-        <text class="savings-title">存钱目标进度</text>
+        <text class="savings-title">存钱进度</text>
         <view class="savings-ratio mono-num">
           <text @click="promptEditSavings">{{ isPrivacy ? '***' : '¥' + profile.currentSavings }}</text>
           <text> / </text>
-          <text @click="promptEditTarget">{{ isPrivacy ? '***' : '¥' + profile.targetSavings }} (点数字修改)</text>
+          <text @click="promptEditTarget">{{ isPrivacy ? '***' : '¥' + profile.targetSavings }}</text>
         </view>
       </view>
       <view class="progress-track">
         <view class="progress-bar" :style="{ width: progressPercent + '%' }"></view>
       </view>
       <view class="savings-footer">
-        <text class="footer-hint mono-num">{{ progressPercent }}% 已达成</text>
-        <text class="footer-hint mono-num">还需打工 {{ snapshot.remainingTimeFormatted || '0小时 0分钟' }}</text>
+        <text class="footer-hint mono-num">{{ progressPercent }}%</text>
+        <text class="footer-hint mono-num">剩余 {{ snapshot.remainingTimeFormatted || '0小时 0分钟' }}</text>
       </view>
     </view>
   </view>

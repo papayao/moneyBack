@@ -96,7 +96,7 @@ export const BillImportModal: React.FC<BillImportModalProps> = ({
         <div className="p-4 border-b border-zinc-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileSpreadsheet className="w-4 h-4 text-zinc-600" />
-            <h2 className="text-sm font-semibold text-zinc-900">导入微信 / 支付宝账单</h2>
+            <h2 className="text-sm font-semibold text-zinc-900">导入账单</h2>
           </div>
           <button
             onClick={onClose}

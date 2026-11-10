@@ -31,7 +31,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         <div className="p-4 border-b border-zinc-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sliders className="w-4 h-4 text-zinc-600" />
-            <h2 className="text-sm font-semibold text-zinc-900">工时与薪资设置</h2>
+            <h2 className="text-sm font-semibold text-zinc-900">薪资与工时</h2>
           </div>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 transition">
             <X className="w-4 h-4" />

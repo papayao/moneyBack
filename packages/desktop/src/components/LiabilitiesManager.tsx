@@ -87,19 +87,16 @@ export const LiabilitiesManager: React.FC<LiabilitiesManagerProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-rose-600" />
-            <h3 className="text-sm font-semibold text-zinc-900">刚性负债管理与实时消减</h3>
+            <h3 className="text-sm font-semibold text-zinc-900">负债情况</h3>
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-rose-50 text-rose-700 border border-rose-200">
-              {liabilities.length} 笔负债 · 月供合计 -¥{Math.round(totalMonthlyPayment).toLocaleString()}/月
+              {liabilities.length} 笔 · 月供 -¥{Math.round(totalMonthlyPayment).toLocaleString()}/月
             </span>
           </div>
-          <p className="text-xs text-zinc-500 mt-0.5">
-            房贷、车贷及信用卡分期（按工作日均摊对冲，随劳动实时秒级消减）
-          </p>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <div className="text-[10px] text-zinc-400 font-sans">实时剩余待还负债</div>
+            <div className="text-[10px] text-zinc-400 font-sans">待还负债</div>
             <div className="text-sm font-bold font-mono text-rose-600">
               {isPrivacyMode ? '****' : (
                 <RollingNumber value={`¥${totalDebtRemainingLive.toFixed(2)}`} />
@@ -122,26 +119,26 @@ export const LiabilitiesManager: React.FC<LiabilitiesManagerProps> = ({
         <div className="bg-zinc-50/70 border border-zinc-200/80 rounded-sm p-3 space-y-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-zinc-600 gap-1.5">
             <span className="font-mono">
-              清偿总进度:{' '}
+              清偿进度:{' '}
               <strong className="text-zinc-900 font-semibold">{debtPayoffPercent}%</strong>
               <span className="text-zinc-400 ml-1.5 font-normal">
-                (已还清 ¥{totalDebtPaid.toLocaleString()} / 债务总额 ¥{totalDebt.toLocaleString()})
+                (已还 ¥{totalDebtPaid.toLocaleString()} / 总额 ¥{totalDebt.toLocaleString()})
               </span>
             </span>
 
             <div className="flex items-center gap-2 font-mono text-xs">
               {todayDebtRemainingLive > 0 ? (
                 <span className="text-amber-700">
-                  今日还差 <strong className="font-bold">¥{todayDebtRemainingLive.toFixed(2)}</strong> 负债即归零
+                  今日待平: <strong className="font-bold">¥{todayDebtRemainingLive.toFixed(2)}</strong>
                 </span>
               ) : (
                 <span className="text-emerald-700 font-medium">
-                  今日负债已全额平账！
+                  今日已平账
                 </span>
               )}
               <span className="text-zinc-300">|</span>
               <span>
-                自由还需{' '}
+                预计还清:{' '}
                 <strong className="text-zinc-800 font-semibold">
                   {yearsToDebtFree > 0 ? `${yearsToDebtFree} 年` : '0 年'}
                 </strong>

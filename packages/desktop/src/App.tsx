@@ -242,12 +242,12 @@ export function App() {
         {transactions.length > 0 && (
           <div className="border border-zinc-200/90 bg-white p-4 rounded-md shadow-2xs">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-zinc-900">已录入账单流水 ({transactions.length} 笔)</h3>
+              <h3 className="text-sm font-semibold text-zinc-900">账单流水 ({transactions.length})</h3>
               <button
                 onClick={() => setTransactions([])}
                 className="text-xs text-zinc-500 hover:text-rose-600 transition"
               >
-                清空流水
+                清空
               </button>
             </div>
             <div className="divide-y divide-zinc-100 max-h-48 overflow-y-auto font-mono text-xs">
