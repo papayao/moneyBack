@@ -22,13 +22,20 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleMini,
 }) => {
   const getStatusBadge = () => {
-    if (snapshot.isLunchBreak) {
-      return <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">午休摸鱼中</span>;
-    }
     if (snapshot.isWorkingTime) {
-      return <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">计费工作中</span>;
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          计费工作中
+        </span>
+      );
     }
-    return <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">已下班</span>;
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm text-xs font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
+        已下班
+      </span>
+    );
   };
 
   return (

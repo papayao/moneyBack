@@ -86,29 +86,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            <div>
-              <label className="block text-xs text-zinc-600 mb-1">午休开始</label>
-              <input
-                type="time"
-                value={formData.lunchStartTime}
-                onChange={e => setFormData({ ...formData, lunchStartTime: e.target.value })}
-                className="w-full bg-zinc-50 border border-zinc-300 text-xs text-zinc-900 rounded-sm px-2.5 py-2 font-mono focus:outline-none focus:border-zinc-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-zinc-600 mb-1">午休结束</label>
-              <input
-                type="time"
-                value={formData.lunchEndTime}
-                onChange={e => setFormData({ ...formData, lunchEndTime: e.target.value })}
-                className="w-full bg-zinc-50 border border-zinc-300 text-xs text-zinc-900 rounded-sm px-2.5 py-2 font-mono focus:outline-none focus:border-zinc-500"
-                required
-              />
-            </div>
-          </div>
-
           <div className="pt-2 flex justify-end gap-2 border-t border-zinc-200">
             <button
               type="button"

@@ -39,10 +39,16 @@ export const IncomeSourcesManager: React.FC<IncomeSourcesManagerProps> = ({
   const [newAmount, setNewAmount] = useState('');
   const [newFrequency, setNewFrequency] = useState<IncomeSource['frequency']>('monthly');
   const [newIsAmortized, setNewIsAmortized] = useState(false);
+  // Optional custom work schedule
+  const [newWorkDays, setNewWorkDays] = useState('21.75');
+  const [newWorkStartTime, setNewWorkStartTime] = useState('09:00');
+  const [newWorkEndTime, setNewWorkEndTime] = useState('18:00');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newAmount) return;
+
+    const hasCustomSchedule = Boolean(newWorkStartTime.trim() && newWorkEndTime.trim());
 
     onAddIncomeSource({
       id: Date.now(),
@@ -52,11 +58,19 @@ export const IncomeSourcesManager: React.FC<IncomeSourcesManagerProps> = ({
       amount: parseFloat(newAmount) || 0,
       frequency: newFrequency,
       isAmortized: newMode === 'one_time' ? newIsAmortized : undefined,
+      workDaysPerMonth: hasCustomSchedule
+        ? (parseFloat(newWorkDays) || 21.75)
+        : (newWorkDays ? parseFloat(newWorkDays) : 30),
+      workStartTime: hasCustomSchedule ? newWorkStartTime : undefined,
+      workEndTime: hasCustomSchedule ? newWorkEndTime : undefined,
       status: 'active',
     });
 
     setNewTitle('');
     setNewAmount('');
+    setNewWorkDays('21.75');
+    setNewWorkStartTime('09:00');
+    setNewWorkEndTime('18:00');
     setShowAddForm(false);
   };
 
@@ -228,6 +242,54 @@ export const IncomeSourcesManager: React.FC<IncomeSourcesManagerProps> = ({
             </div>
           </div>
 
+          {newMode === 'streaming' && (
+            <div className="p-2.5 bg-white border border-zinc-200 rounded-sm space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-zinc-800 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-zinc-600" />
+                  <span>工时设置 (选填：未填则默认 30 天全天候)</span>
+                </label>
+                <span className="text-[10px] text-zinc-400 font-mono">未填上下班按30天24h全天进账</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-[11px] text-zinc-500 mb-0.5">月计费天数 (天)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="默认 30"
+                    value={newWorkDays}
+                    onChange={e => setNewWorkDays(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-300 rounded-sm px-2 py-1 text-xs text-zinc-900 font-mono focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-zinc-500 mb-0.5">上班时间</label>
+                  <input
+                    type="time"
+                    value={newWorkStartTime}
+                    onChange={e => setNewWorkStartTime(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-300 rounded-sm px-2 py-1 text-xs text-zinc-900 font-mono focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-zinc-500 mb-0.5">下班时间</label>
+                  <input
+                    type="time"
+                    value={newWorkEndTime}
+                    onChange={e => setNewWorkEndTime(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-300 rounded-sm px-2 py-1 text-xs text-zinc-900 font-mono focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
+              </div>
+
+              <div className="text-[10px] text-zinc-500">
+                提示：未填上下班时间默认每月 30 天 24 小时全天候进账（如房租、利息）；填写上下班时间则按工作时段与天数流式计费（如配偶工薪、副业）。
+              </div>
+            </div>
+          )}
+
           {newMode === 'one_time' && (
             <div className="flex items-center gap-2 bg-white p-2 rounded-sm border border-zinc-200 text-xs">
               <input
@@ -286,6 +348,11 @@ export const IncomeSourcesManager: React.FC<IncomeSourcesManagerProps> = ({
                         <span className="text-[10px] font-mono px-1 rounded-sm bg-white border border-zinc-200 text-zinc-500">
                           {getTypeName(s.type)}
                         </span>
+                        <span className="text-[10px] font-mono px-1 rounded-sm bg-zinc-100 text-zinc-600 border border-zinc-200">
+                          {s.workStartTime && s.workEndTime
+                            ? `${s.workDaysPerMonth || 21.75}天 · ${s.workStartTime}-${s.workEndTime}`
+                            : `${s.workDaysPerMonth || 30}天 · 24/7 全天候`}
+                        </span>
                         {s.isAmortized && (
                           <span className="text-[10px] font-mono px-1 rounded-sm bg-amber-50 text-amber-700 border border-amber-200">
                             年终奖已年化平摊
@@ -295,7 +362,9 @@ export const IncomeSourcesManager: React.FC<IncomeSourcesManagerProps> = ({
                       <div className="text-[11px] text-zinc-500 font-mono">
                         {s.frequency === 'annual'
                           ? `按年结算 (折合 ¥${Math.round(monthlyVal).toLocaleString()}/月)`
-                          : '按月秒级计入时钟现金流'}
+                          : s.workStartTime && s.workEndTime
+                          ? `工时流式计费 (折合 ¥${Math.round(monthlyVal).toLocaleString()}/月)`
+                          : `全天候秒级计入 (折合 ¥${Math.round(monthlyVal).toLocaleString()}/月)`}
                       </div>
                     </div>
                   </div>

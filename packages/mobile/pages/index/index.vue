@@ -114,8 +114,6 @@ export default {
         workDaysPerMonth: 21.75,
         workStartTime: '09:00',
         workEndTime: '18:00',
-        lunchStartTime: '12:00',
-        lunchEndTime: '13:30',
         targetSavings: 100000,
         currentSavings: 35000,
         baseLaborEarnings: 500000,
@@ -167,12 +165,10 @@ export default {
       return `${sign}¥${Math.abs(this.snapshot.netToday).toFixed(2)}`;
     },
     statusText() {
-      if (this.snapshot.isLunchBreak) return '午休摸鱼中';
       if (this.snapshot.isWorkingTime) return '计费工作中';
       return '已下班';
     },
     statusClass() {
-      if (this.snapshot.isLunchBreak) return 'badge-lunch';
       if (this.snapshot.isWorkingTime) return 'badge-work';
       return 'badge-off';
     },

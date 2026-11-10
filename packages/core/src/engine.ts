@@ -12,15 +12,10 @@ export function parseTimeToSeconds(timeStr: string): number {
   return (hours || 0) * 3600 + (minutes || 0) * 60;
 }
 
-export function calculateDailyWorkingSeconds(profile: UserProfile): number {
-  const startSec = parseTimeToSeconds(profile.workStartTime);
-  const endSec = parseTimeToSeconds(profile.workEndTime);
-  const lunchStart = parseTimeToSeconds(profile.lunchStartTime);
-  const lunchEnd = parseTimeToSeconds(profile.lunchEndTime);
-
-  const totalSec = Math.max(0, endSec - startSec);
-  const lunchSec = Math.max(0, lunchEnd - lunchStart);
-  return Math.max(1, totalSec - lunchSec);
+export function calculateDailyWorkingSeconds(schedule: { workStartTime: string; workEndTime: string }): number {
+  const startSec = parseTimeToSeconds(schedule.workStartTime);
+  const endSec = parseTimeToSeconds(schedule.workEndTime);
+  return Math.max(1, endSec - startSec);
 }
 
 export function calculateSalaryPerSecond(profile: UserProfile): number {
@@ -37,16 +32,18 @@ export function calculateDailyDebtCost(liabilities: Liability[], workDaysPerMont
   return monthlyTotal / days;
 }
 
-export function calculateWorkedSecondsToday(profile: UserProfile, now = new Date()): {
+export function calculateWorkedSecondsToday(
+  schedule: { workStartTime: string; workEndTime: string },
+  now = new Date()
+): {
   workedSeconds: number;
   isWorkingTime: boolean;
   isLunchBreak: boolean;
 } {
   const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-  const startSec = parseTimeToSeconds(profile.workStartTime);
-  const endSec = parseTimeToSeconds(profile.workEndTime);
-  const lunchStart = parseTimeToSeconds(profile.lunchStartTime);
-  const lunchEnd = parseTimeToSeconds(profile.lunchEndTime);
+  const startSec = parseTimeToSeconds(schedule.workStartTime);
+  const endSec = parseTimeToSeconds(schedule.workEndTime);
+  const dailySeconds = Math.max(1, endSec - startSec);
 
   if (currentSeconds < startSec) {
     return { workedSeconds: 0, isWorkingTime: false, isLunchBreak: false };
@@ -54,33 +51,12 @@ export function calculateWorkedSecondsToday(profile: UserProfile, now = new Date
 
   if (currentSeconds >= endSec) {
     return {
-      workedSeconds: calculateDailyWorkingSeconds(profile),
+      workedSeconds: dailySeconds,
       isWorkingTime: false,
       isLunchBreak: false,
     };
   }
 
-  // Inside lunch break
-  if (currentSeconds >= lunchStart && currentSeconds < lunchEnd) {
-    return {
-      workedSeconds: Math.max(0, lunchStart - startSec),
-      isWorkingTime: false,
-      isLunchBreak: true,
-    };
-  }
-
-  // Afternoon work
-  if (currentSeconds >= lunchEnd) {
-    const morningWork = Math.max(0, lunchStart - startSec);
-    const afternoonWork = currentSeconds - lunchEnd;
-    return {
-      workedSeconds: morningWork + afternoonWork,
-      isWorkingTime: true,
-      isLunchBreak: false,
-    };
-  }
-
-  // Morning work
   return {
     workedSeconds: currentSeconds - startSec,
     isWorkingTime: true,
@@ -117,9 +93,10 @@ export function calculateTickerSnapshot(
   const { workedSeconds, isWorkingTime, isLunchBreak } = calculateWorkedSecondsToday(profile, now);
   const mainLaborEarnedToday = workedSeconds * salaryPerSec;
 
-  // 2. 被动与额外多元收益：24/7 自然日持续进账 vs 工作日多元进账
+  // 2. 被动与额外多元流式收益：
+  // 若未填写上下班时间，默认 30 天 24 小时全天候自然月持续进账（如房租、理财或全天候收益）；
+  // 若填写了上下班时间，则按设置的工作天数与工作时段按秒流式计费（如配偶打卡工薪、特定副业兼职）。
   const secondsElapsedToday = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-  const naturalMonthlySeconds = 30 * 86400; // 30天全天候
 
   const streamingSources = incomeSources.filter(
     s =>
@@ -128,26 +105,47 @@ export function calculateTickerSnapshot(
   );
 
   let totalAdditionalToday = 0;
-  let totalAdditionalPerSecond = 0;
+  let activeAdditionalRatePerSecond = 0;
 
   const streamingIncomeItems: StreamingIncomeItem[] = streamingSources.map((s, idx) => {
-    const is24x7 = s.type === 'rent' || s.type === 'interest';
     const monthly = s.frequency === 'annual' ? (s.amount || 0) / 12 : (s.amount || 0);
+    const hasCustomSchedule = Boolean(s.workStartTime && s.workEndTime);
 
     let ratePerSecond = 0;
     let todayEarned = 0;
+    let is24x7 = false;
+    let isCurrentlyActive = false;
 
-    if (is24x7) {
-      // 24/7 自然日全天候产生（睡觉休息也在进账）
-      ratePerSecond = monthly / naturalMonthlySeconds;
+    if (!hasCustomSchedule) {
+      // 未填时间：默认 30 天全天候 24/7 进账
+      is24x7 = true;
+      isCurrentlyActive = true;
+      const days = s.workDaysPerMonth && s.workDaysPerMonth > 0 ? s.workDaysPerMonth : 30;
+      const totalSecondsInMonth = days * 86400;
+      ratePerSecond = totalSecondsInMonth > 0 ? monthly / totalSecondsInMonth : 0;
       todayEarned = secondsElapsedToday * ratePerSecond;
     } else {
-      // 工作日/工作时段计费（如配偶工资或年化奖金）
+      // 填了时间：按指定上下班时间与工作天数流式计费
+      is24x7 = false;
+      const days = s.workDaysPerMonth && s.workDaysPerMonth > 0 ? s.workDaysPerMonth : 21.75;
+      const itemDailySeconds = calculateDailyWorkingSeconds({
+        workStartTime: s.workStartTime!,
+        workEndTime: s.workEndTime!,
+      });
+      const totalMonthlySeconds = days * itemDailySeconds;
       ratePerSecond = totalMonthlySeconds > 0 ? monthly / totalMonthlySeconds : 0;
-      todayEarned = workedSeconds * ratePerSecond;
+
+      const scheduleResult = calculateWorkedSecondsToday(
+        { workStartTime: s.workStartTime!, workEndTime: s.workEndTime! },
+        now
+      );
+      todayEarned = scheduleResult.workedSeconds * ratePerSecond;
+      isCurrentlyActive = scheduleResult.isWorkingTime;
     }
 
-    totalAdditionalPerSecond += ratePerSecond;
+    if (isCurrentlyActive) {
+      activeAdditionalRatePerSecond += ratePerSecond;
+    }
     totalAdditionalToday += todayEarned;
 
     return {
@@ -160,6 +158,10 @@ export function calculateTickerSnapshot(
       ratePerSecond,
       ratePerHour: Math.round(ratePerSecond * 3600 * 100) / 100,
       todayEarned: Math.round(todayEarned * 100) / 100,
+      workDaysPerMonth: s.workDaysPerMonth,
+      workStartTime: s.workStartTime,
+      workEndTime: s.workEndTime,
+      isCurrentlyActive,
     };
   });
 
@@ -170,10 +172,8 @@ export function calculateTickerSnapshot(
   const additionalIncomeMonthly = calculateAdditionalMonthlyIncome(incomeSources);
   const totalMonthlyIncome = profile.monthlySalary + additionalIncomeMonthly;
 
-  // 综合秒级产出速率（工作时间内：工薪 + 多元；非工作时间：全天候被动产出）
-  const totalIncomePerSecond = isWorkingTime
-    ? salaryPerSec + totalAdditionalPerSecond
-    : totalAdditionalPerSecond;
+  // 综合秒级产出速率（主业在工作时段产出 + 活跃中/全天候多元流式产出）
+  const totalIncomePerSecond = (isWorkingTime ? salaryPerSec : 0) + activeAdditionalRatePerSecond;
 
   const earnedToday = mainLaborEarnedToday + totalAdditionalToday;
   const dailyDebt = calculateDailyDebtCost(liabilities, profile.workDaysPerMonth);

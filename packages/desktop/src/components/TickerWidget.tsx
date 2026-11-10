@@ -151,12 +151,10 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                     className={`text-[10px] px-1 py-0.2 rounded-sm inline-block mt-0.5 font-sans ${
                       snapshot.isWorkingTime
                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : snapshot.isLunchBreak
-                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
                         : 'bg-zinc-100 text-zinc-500'
                     }`}
                   >
-                    {snapshot.isWorkingTime ? '工作中计费中' : snapshot.isLunchBreak ? '午休摸鱼暂停' : '已下班暂停'}
+                    {snapshot.isWorkingTime ? '工作中计费中' : '已下班暂停'}
                   </span>
                 </div>
               </div>
@@ -215,8 +213,15 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                     <div className="truncate max-w-[170px]">
                       <div className="text-[11px] font-sans font-medium text-zinc-800 truncate flex items-center gap-1.5">
                         <span title={item.title}>{item.title}</span>
-                        <span className="text-[9px] px-1 py-0.2 rounded-sm bg-zinc-100 text-zinc-500 font-mono">
-                          {item.is24x7 ? '24/7 全天' : '工作时段'}
+                        <span className={`text-[9px] px-1 py-0.2 rounded-sm font-mono flex items-center gap-1 ${
+                          item.is24x7
+                            ? 'bg-zinc-100 text-zinc-600 border border-zinc-200'
+                            : item.isCurrentlyActive
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-zinc-100 text-zinc-400'
+                        }`}>
+                          {item.isCurrentlyActive && <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>}
+                          {item.is24x7 ? '30天·24h' : `${item.workDaysPerMonth || 21.75}天·${item.workStartTime || '09:00'}-${item.workEndTime || '18:00'}`}
                         </span>
                       </div>
                       <div className="text-[10px] text-zinc-400 font-mono mt-0.5">

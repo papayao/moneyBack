@@ -21,8 +21,6 @@ const DEFAULT_PROFILE: UserProfile = {
   workDaysPerMonth: 21.75,
   workStartTime: '09:00',
   workEndTime: '18:00',
-  lunchStartTime: '12:00',
-  lunchEndTime: '13:30',
   targetSavings: 100000,
   currentSavings: 35000,
   baseLaborEarnings: 500000,
@@ -58,6 +56,9 @@ const DEFAULT_INCOME_SOURCES: IncomeSource[] = [
     title: '配偶月薪 (妻子/丈夫)',
     amount: 15000,
     frequency: 'monthly',
+    workDaysPerMonth: 21.75,
+    workStartTime: '09:00',
+    workEndTime: '18:00',
     status: 'active',
   },
   {

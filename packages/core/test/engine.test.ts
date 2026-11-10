@@ -17,8 +17,6 @@ describe('SalaryTicker Engine', () => {
     workDaysPerMonth: 21.75,
     workStartTime: '09:00',
     workEndTime: '18:00',
-    lunchStartTime: '12:00',
-    lunchEndTime: '13:00',
     targetSavings: 50000,
     currentSavings: 10000,
   };
@@ -35,16 +33,16 @@ describe('SalaryTicker Engine', () => {
     },
   ];
 
-  it('calculates daily work seconds excluding lunch break', () => {
-    // 09:00 to 18:00 = 9h, minus 1h lunch = 8h = 28800s
+  it('calculates daily work seconds without lunch interruption', () => {
+    // 09:00 to 18:00 = 9h = 32400s (午休已全面取消，上下班区间即全部工时)
     const seconds = calculateDailyWorkingSeconds(mockProfile);
-    expect(seconds).toBe(28800);
+    expect(seconds).toBe(32400);
   });
 
   it('calculates salary per second accurately', () => {
-    // 21750 / (21.75 * 28800) = 1000 / 28800 ≈ 0.0347222 RMB/s
+    // 21750 / (21.75 * 32400) = 1000 / 32400 ≈ 0.030864 RMB/s
     const perSec = calculateSalaryPerSecond(mockProfile);
-    expect(perSec).toBeCloseTo(0.034722, 5);
+    expect(perSec).toBeCloseTo(0.030864, 5);
   });
 
   it('calculates daily debt amortization', () => {
@@ -54,49 +52,74 @@ describe('SalaryTicker Engine', () => {
   });
 
   it('calculates ticker snapshot in morning work (starts negative)', () => {
-    // At 10:00 (1h worked = 3600s * 0.034722 ≈ 125 RMB earned)
-    // Net: 125 - 200 = -75 RMB (still negative)
+    // At 10:00 (1h worked = 3600s * 0.030864 ≈ 111.11 RMB earned)
+    // Net: 111.11 - 200 = -88.89 RMB (still negative)
     const morningDate = new Date(2026, 10, 10, 10, 0, 0);
     const snapshot = calculateTickerSnapshot(mockProfile, mockLiabilities, morningDate);
 
     expect(snapshot.hoursWorkedToday).toBe(1);
-    expect(snapshot.earnedToday).toBe(125);
+    expect(snapshot.earnedToday).toBe(111.11);
     expect(snapshot.dailyDebtCost).toBe(200);
-    expect(snapshot.netToday).toBe(-75);
+    expect(snapshot.netToday).toBe(-88.89);
     expect(snapshot.isNetPositive).toBe(false);
   });
 
   it('crosses into net positive in the afternoon', () => {
-    // At 15:00: morning (3h) + afternoon (2h) = 5h worked = 18000s * 0.034722 = 625 RMB earned
-    // Net: 625 - 200 = 425 RMB
+    // At 15:00: 6h worked = 21600s * 0.0308641975 ≈ 666.67 RMB earned
+    // Net: 666.67 - 200 = 466.67 RMB
     const afternoonDate = new Date(2026, 10, 10, 15, 0, 0);
     const snapshot = calculateTickerSnapshot(mockProfile, mockLiabilities, afternoonDate);
 
-    expect(snapshot.hoursWorkedToday).toBe(5);
-    expect(snapshot.earnedToday).toBe(625);
-    expect(snapshot.netToday).toBe(425);
+    expect(snapshot.hoursWorkedToday).toBe(6);
+    expect(snapshot.earnedToday).toBe(666.67);
+    expect(snapshot.netToday).toBe(466.67);
     expect(snapshot.isNetPositive).toBe(true);
 
     // Total labor earnings and expenses including debt:
-    // Base labor earnings default: 500,000 + 625 earnedToday = 500625
-    expect(snapshot.totalLaborEarningsLive).toBe(500625);
+    // Base labor earnings default: 500,000 + 666.67 earnedToday = 500666.67
+    expect(snapshot.totalLaborEarningsLive).toBe(500666.67);
     // Base living expenses: 500,000 - 10,000 (savings) = 490,000
     // Total debt: 1,000,000
     // Total expenses: 490,000 + 1,000,000 = 1,490,000
     expect(snapshot.totalExpensesLive).toBe(1490000);
   });
 
-  it('includes additional custom income sources (partner, rent, interest)', () => {
-    const afternoonDate = new Date(2026, 10, 10, 15, 0, 0); // 5h worked
+  it('includes additional custom income sources (with schedule vs default 30-day 24/7)', () => {
+    const afternoonDate = new Date(2026, 10, 10, 15, 0, 0);
     const incomeSources = [
-      { id: 1, title: '妻子工资', type: 'partner' as const, amount: 10875, frequency: 'monthly' as const },
-      { id: 2, title: '投资房租', type: 'rent' as const, amount: 3000, frequency: 'monthly' as const },
+      {
+        id: 1,
+        title: '配偶打卡工薪',
+        type: 'partner' as const,
+        amount: 10875,
+        frequency: 'monthly' as const,
+        workDaysPerMonth: 21.75,
+        workStartTime: '09:00',
+        workEndTime: '18:00',
+      },
+      {
+        id: 2,
+        title: '投资房租 (未填时间默认 30 天 24/7 全天候)',
+        type: 'rent' as const,
+        amount: 3000,
+        frequency: 'monthly' as const,
+      },
     ];
     // Monthly salary 21750 + 10875 + 3000 = 35625
     const snapshot = calculateTickerSnapshot(mockProfile, mockLiabilities, afternoonDate, [], incomeSources);
     expect(snapshot.additionalIncomeMonthly).toBe(13875);
     expect(snapshot.totalMonthlyIncome).toBe(35625);
-    expect(snapshot.earnedToday).toBeGreaterThan(625);
+    expect(snapshot.earnedToday).toBeGreaterThan(666.67);
+
+    // Verify 24/7 item properties
+    const rentItem = snapshot.streamingIncomeItems.find(i => i.type === 'rent');
+    expect(rentItem?.is24x7).toBe(true);
+    expect(rentItem?.isCurrentlyActive).toBe(true);
+
+    // Verify scheduled partner item
+    const partnerItem = snapshot.streamingIncomeItems.find(i => i.type === 'partner');
+    expect(partnerItem?.is24x7).toBe(false);
+    expect(partnerItem?.isCurrentlyActive).toBe(true);
   });
 
   it('generates hourly, daily, and monthly trend data accurately', () => {

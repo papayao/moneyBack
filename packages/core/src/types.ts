@@ -4,8 +4,8 @@ export interface UserProfile {
   workDaysPerMonth: number;
   workStartTime: string; // "09:00"
   workEndTime: string;   // "18:00"
-  lunchStartTime: string;// "12:00"
-  lunchEndTime: string;  // "13:30"
+  lunchStartTime?: string;// 已废弃 (取消午休)
+  lunchEndTime?: string;  // 已废弃 (取消午休)
   targetSavings: number;
   currentSavings: number;
   baseLaborEarnings?: number; // 历史累计劳动所得基准值 (默认 500,000)
@@ -31,6 +31,9 @@ export interface IncomeSource {
   mode?: 'streaming' | 'one_time'; // 'streaming' (按秒/持续) | 'one_time' (一次性到账/年终奖)，默认 streaming
   frequency?: 'monthly' | 'annual' | 'once';
   isAmortized?: boolean; // 若为一次性奖金，是否选择平摊进时钟每秒
+  workDaysPerMonth?: number; // 工作天数 (未填时间时默认 30 天)
+  workStartTime?: string;    // 上班时间 (例如 "09:00"，未填默认全天候 24h)
+  workEndTime?: string;      // 下班时间 (例如 "18:00"，未填默认全天候 24h)
   status?: 'active' | 'received';
   receivedDate?: string;
 }
@@ -41,10 +44,14 @@ export interface StreamingIncomeItem {
   type: string;
   amount: number;
   frequency: string;
-  is24x7: boolean;       // 是否 24/7 自然日持续进账 (房租、利息)
+  is24x7: boolean;       // 是否 24/7 自然日持续进账 (未填时间时为 true，30天全天候)
   ratePerSecond: number; // 元/秒
   ratePerHour: number;   // 元/小时
   todayEarned: number;   // 今日累计赚取 (元)
+  workDaysPerMonth?: number;
+  workStartTime?: string;
+  workEndTime?: string;
+  isCurrentlyActive?: boolean; // 当前此刻是否正在计费进账中
 }
 
 export interface Transaction {
