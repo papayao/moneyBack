@@ -9,19 +9,22 @@ export default {
     extend: {
       fontFamily: {
         sans: [
+          '"Geist Sans"',
+          'Geist',
           'Inter',
           '-apple-system',
           'BlinkMacSystemFont',
+          '"Segoe UI"',
           '"PingFang SC"',
           '"Hiragino Sans GB"',
-          '"Noto Sans SC"',
           '"Microsoft YaHei"',
           'sans-serif',
         ],
         mono: [
-          '"JetBrains Mono"',
           '"Geist Mono"',
-          '"SF Mono"',
+          '"JetBrains Mono"',
+          'ui-monospace',
+          'SFMono-Regular',
           'Consolas',
           'Menlo',
           'monospace',

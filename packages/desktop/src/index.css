@@ -4,22 +4,24 @@
 
 @layer base {
   html {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+    font-family: 'Geist Sans', 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
+    letter-spacing: -0.015em;
   }
   body {
-    @apply bg-zinc-100/70 text-zinc-900 tracking-tight;
+    @apply bg-zinc-100/70 text-zinc-900 tracking-tight font-sans;
   }
 }
 
-/* Monospace ticker display style */
-.ticker-digits {
-  font-family: 'JetBrains Mono', 'Consolas', monospace;
+/* Monospace ticker display style (Aceternity Geist Mono / JetBrains Mono) */
+.ticker-digits,
+.font-mono {
+  font-family: 'Geist Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace !important;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.035em;
 }
 
 /* Subtle scrollbar */
