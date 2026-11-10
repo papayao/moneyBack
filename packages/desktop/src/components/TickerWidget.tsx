@@ -1,6 +1,7 @@
 import React from 'react';
 import { TickerSnapshot, UserProfile } from '@salary-ticker/core';
-import { TrendingDown, TrendingUp, Target, Clock, ArrowRight } from 'lucide-react';
+import { TrendingDown, TrendingUp, Target, Clock } from 'lucide-react';
+import { RollingNumber } from './RollingNumber';
 
 interface TickerWidgetProps {
   snapshot: TickerSnapshot;
@@ -41,13 +42,12 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
         </div>
 
         <div className="flex items-baseline gap-3 my-2">
-          <div
-            className={`text-5xl md:text-6xl font-bold ticker-digits ${
+          <RollingNumber
+            value={formatMoney(snapshot.netToday, true)}
+            className={`text-5xl md:text-6xl font-bold ${
               snapshot.isNetPositive ? 'text-emerald-400' : 'text-rose-400'
             }`}
-          >
-            {formatMoney(snapshot.netToday, true)}
-          </div>
+          />
           <span className="text-xs text-zinc-400 font-mono">
             {snapshot.isNetPositive ? '已实现今日净盈余' : '正在对冲今日硬性负债'}
           </span>
@@ -62,7 +62,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
             <div>
               <div className="text-xs text-zinc-400">今日劳动所得</div>
               <div className="text-sm font-semibold font-mono text-zinc-200">
-                {formatMoney(snapshot.earnedToday)}
+                <RollingNumber value={formatMoney(snapshot.earnedToday)} />
               </div>
             </div>
           </div>
@@ -74,7 +74,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
             <div>
               <div className="text-xs text-zinc-400">今日负债均摊</div>
               <div className="text-sm font-semibold font-mono text-zinc-200">
-                {formatMoney(snapshot.dailyDebtCost)}
+                <RollingNumber value={formatMoney(snapshot.dailyDebtCost)} />
               </div>
             </div>
           </div>

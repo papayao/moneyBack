@@ -85,13 +85,13 @@ export function App() {
     localStorage.setItem('salary_ticker_txs', JSON.stringify(transactions));
   }, [transactions]);
 
-  // Real-time ticking (every 1 second)
+  // Real-time ticking (every 200ms for ultra-smooth rolling odometer)
   useEffect(() => {
     const update = () => {
       setSnapshot(calculateTickerSnapshot(profile, liabilities, new Date()));
     };
     update();
-    const timer = setInterval(update, 1000);
+    const timer = setInterval(update, 200);
     return () => clearInterval(timer);
   }, [profile, liabilities]);
 

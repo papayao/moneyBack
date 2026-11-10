@@ -1,6 +1,7 @@
 import React from 'react';
 import { TickerSnapshot } from '@salary-ticker/core';
 import { Maximize2, Eye, EyeOff } from 'lucide-react';
+import { RollingNumber } from './RollingNumber';
 
 interface MiniFloatWindowProps {
   snapshot: TickerSnapshot;
@@ -30,13 +31,12 @@ export const MiniFloatWindow: React.FC<MiniFloatWindowProps> = ({
           }`}
         />
         <span className="text-xs text-zinc-400">今日净计费:</span>
-        <span
-          className={`text-sm font-bold ticker-digits ${
+        <RollingNumber
+          value={formatAmount()}
+          className={`text-sm font-bold ${
             snapshot.isNetPositive ? 'text-emerald-400' : 'text-rose-400'
           }`}
-        >
-          {formatAmount()}
-        </span>
+        />
       </div>
 
       <div className="flex items-center gap-1.5 ml-4">
