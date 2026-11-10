@@ -19,6 +19,7 @@ import {
   Sparkles,
   Coins,
   X,
+  CircleAlert,
 } from 'lucide-react';
 import { RollingNumber } from './RollingNumber';
 import { BackgroundBeamsWithCollision } from './ui/background-beams-with-collision';
@@ -219,13 +220,24 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                 </span>
               </div>
 
-              <div className="flex items-baseline gap-3 my-1">
+              <div className="flex items-center gap-2.5 my-1">
                 <RollingNumber
                   value={formatMoney(currentNetValue, true)}
                   className={`text-4xl md:text-5xl font-bold ${
                     isCurrentPositive ? 'text-emerald-600' : 'text-rose-600'
                   }`}
                 />
+
+                {/* Exclamation tooltip */}
+                <div className="group/tooltip relative inline-flex items-center self-center cursor-help">
+                  <CircleAlert className="w-4 h-4 text-zinc-400 hover:text-zinc-700 transition" />
+                  <div className="pointer-events-none absolute left-0 sm:left-full sm:ml-2 bottom-full sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 mb-1.5 sm:mb-0 z-50 hidden group-hover/tooltip:flex flex-col w-52 p-2 bg-zinc-900 text-white text-xs rounded-sm shadow-md font-sans">
+                    <span className="font-semibold text-zinc-100">净收入 = 今日收入 - 今日负债</span>
+                    <span className="text-[11px] text-zinc-300 mt-0.5 leading-tight">
+                      按秒实时扣除今日均摊应还负债后的净到手所得。
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 

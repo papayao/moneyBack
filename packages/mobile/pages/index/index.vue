@@ -19,7 +19,10 @@
     <!-- Main Hero Live Net Amount -->
     <view class="hero-card">
       <view class="hero-header-row">
-        <text class="hero-label">今日净收入</text>
+        <view class="flex-row items-center gap-1">
+          <text class="hero-label">今日净收入</text>
+          <text class="info-icon" @click="showNetInfo">!</text>
+        </view>
         <view class="mode-pills">
           <text
             class="mode-pill"
@@ -295,6 +298,12 @@ export default {
           }
         },
       });
+    showNetInfo() {
+      uni.showToast({
+        title: '净收入 = 今日收入 - 今日负债',
+        icon: 'none',
+        duration: 2500,
+      });
     },
   },
 };
@@ -409,8 +418,19 @@ export default {
 .hero-label {
   font-size: 22rpx;
   color: #71717a;
-  margin-bottom: 16rpx;
   display: block;
+}
+
+.info-icon {
+  width: 28rpx;
+  height: 28rpx;
+  line-height: 26rpx;
+  text-align: center;
+  border-radius: 50%;
+  border: 1rpx solid #d4d4d8;
+  color: #71717a;
+  font-size: 20rpx;
+  font-weight: bold;
 }
 
 .hero-amount {
