@@ -43,6 +43,23 @@
       </view>
     </view>
 
+    <!-- Debt Payoff Progress Bar (负债消减进度) -->
+    <view v-if="snapshot.totalDebt > 0" class="savings-card debt-card">
+      <view class="savings-header">
+        <text class="savings-title text-debt">负债实时消减进度</text>
+        <text class="savings-ratio mono-num text-negative">
+          剩余: {{ isPrivacy ? '****' : '¥' + snapshot.totalDebtRemainingLive.toFixed(2) }}
+        </text>
+      </view>
+      <view class="progress-track">
+        <view class="progress-bar debt-bar" :style="{ width: snapshot.debtPayoffPercent + '%' }"></view>
+      </view>
+      <view class="savings-footer">
+        <text class="footer-hint mono-num">已还清 {{ snapshot.debtPayoffPercent }}%</text>
+        <text class="footer-hint mono-num">自由还需 {{ snapshot.yearsToDebtFree }} 年</text>
+      </view>
+    </view>
+
     <!-- Savings Progress Bar -->
     <view class="savings-card">
       <view class="savings-header">
@@ -309,6 +326,18 @@ export default {
   border: 1rpx solid #27272a;
   border-radius: 8rpx;
   padding: 28rpx;
+}
+
+.debt-card {
+  margin-bottom: 24rpx;
+}
+
+.debt-bar {
+  background-color: #f43f5e;
+}
+
+.text-debt {
+  color: #fda4af;
 }
 
 .savings-header {

@@ -41,6 +41,14 @@ export interface TickerSnapshot {
   hoursWorkedToday: number;
   hoursRemainingToSavingsTarget: number;
   remainingTimeFormatted: string; // e.g. "530 小时 12 分钟"
+  // Debt payoff progression
+  totalDebt: number;
+  totalDebtRemainingLive: number;
+  totalDebtPaid: number;
+  debtPayoffPercent: number;
+  todayDebtRemainingLive: number;
+  hoursToDebtFree: number;
+  yearsToDebtFree: number;
   isWorkingTime: boolean;
   isLunchBreak: boolean;
 }

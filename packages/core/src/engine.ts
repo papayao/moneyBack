@@ -101,6 +101,25 @@ export function calculateTickerSnapshot(
   const remainingTimeFormatted = `${remHours} 小时 ${remMinutes} 分钟`;
   const hoursRemaining = totalRemainingSeconds / 3600;
 
+  // Live decreasing debt calculations
+  const activeLiabilities = liabilities.filter(l => (l.status ?? 'active') === 'active');
+  const totalDebt = activeLiabilities.reduce((acc, curr) => acc + curr.totalAmount, 0);
+  const baseRemainingDebt = activeLiabilities.reduce((acc, curr) => acc + curr.remainingAmount, 0);
+
+  // Today's debt消减: starts at dailyDebt and decreases to 0 as earnedToday grows
+  const todayDebtRemainingLive = Math.max(0, dailyDebt - earnedToday);
+
+  // Total debt消减: baseRemainingDebt steadily decreases by earnedToday
+  const totalDebtRemainingLive = Math.max(0, baseRemainingDebt - earnedToday);
+  const totalDebtPaid = Math.max(0, totalDebt - totalDebtRemainingLive);
+  const debtPayoffPercent = totalDebt > 0 ? (totalDebtPaid / totalDebt) * 100 : 100;
+
+  const hourlySalary = salaryPerSec * 3600;
+  const hoursToDebtFree = hourlySalary > 0 ? totalDebtRemainingLive / hourlySalary : 0;
+  const dailyWorkSeconds = calculateDailyWorkingSeconds(profile);
+  const annualWorkHours = (profile.workDaysPerMonth * dailyWorkSeconds * 12) / 3600;
+  const yearsToDebtFree = annualWorkHours > 0 ? hoursToDebtFree / annualWorkHours : 0;
+
   return {
     earnedToday: Math.round(earnedToday * 100) / 100,
     dailyDebtCost: Math.round(dailyDebt * 100) / 100,
@@ -110,6 +129,13 @@ export function calculateTickerSnapshot(
     hoursWorkedToday: Math.round((workedSeconds / 3600) * 100) / 100,
     hoursRemainingToSavingsTarget: Math.round(hoursRemaining * 10) / 10,
     remainingTimeFormatted,
+    totalDebt: Math.round(totalDebt * 100) / 100,
+    totalDebtRemainingLive: Math.round(totalDebtRemainingLive * 100) / 100,
+    totalDebtPaid: Math.round(totalDebtPaid * 100) / 100,
+    debtPayoffPercent: Math.round(debtPayoffPercent * 10) / 10,
+    todayDebtRemainingLive: Math.round(todayDebtRemainingLive * 100) / 100,
+    hoursToDebtFree: Math.round(hoursToDebtFree * 10) / 10,
+    yearsToDebtFree: Math.round(yearsToDebtFree * 10) / 10,
     isWorkingTime,
     isLunchBreak,
   };
