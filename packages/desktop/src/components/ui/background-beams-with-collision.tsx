@@ -74,7 +74,7 @@ const CollisionMechanism: React.FC<{
     coordinates: null,
   });
 
-  const [cycleCollisionDetected, setCycleCollisionDetected] = useState(false);
+  const cycleCollisionDetectedRef = useRef(false);
   const beamRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,13 +83,14 @@ const CollisionMechanism: React.FC<{
         beamRef.current &&
         containerRef.current &&
         parentRef.current &&
-        !cycleCollisionDetected
+        !cycleCollisionDetectedRef.current
       ) {
         const beamRect = beamRef.current.getBoundingClientRect();
         const containerRect = containerRef.current.getBoundingClientRect();
         const parentRect = parentRef.current.getBoundingClientRect();
 
         if (beamRect.bottom >= containerRect.top + 60) {
+          cycleCollisionDetectedRef.current = true;
           const relativeX = beamRect.left - parentRect.left + beamRect.width / 2;
           const relativeY = beamRect.bottom - parentRect.top;
 
@@ -97,20 +98,19 @@ const CollisionMechanism: React.FC<{
             detected: true,
             coordinates: { x: relativeX, y: relativeY },
           });
-          setCycleCollisionDetected(true);
         }
       }
     };
 
     const interval = setInterval(checkCollision, 50);
     return () => clearInterval(interval);
-  }, [cycleCollisionDetected, containerRef, parentRef]);
+  }, [containerRef, parentRef]);
 
   useEffect(() => {
     if (collision.detected) {
       const timer = setTimeout(() => {
         setCollision({ detected: false, coordinates: null });
-        setCycleCollisionDetected(false);
+        cycleCollisionDetectedRef.current = false;
       }, 2000);
 
       const nextCycleTimer = setTimeout(() => {
@@ -122,7 +122,7 @@ const CollisionMechanism: React.FC<{
         clearTimeout(nextCycleTimer);
       };
     }
-  }, [collision, beamOptions]);
+  }, [collision.detected, beamOptions]);
 
   // Color schemes (NO purple/blue gradients)
   const beamGradient = isPositive
