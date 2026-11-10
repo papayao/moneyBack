@@ -9,6 +9,7 @@ import {
 } from '@salary-ticker/core';
 import { Header } from './components/Header';
 import { TickerWidget } from './components/TickerWidget';
+import { TrendChartCard } from './components/TrendChartCard';
 import { LiabilitiesManager } from './components/LiabilitiesManager';
 import { IncomeSourcesManager } from './components/IncomeSourcesManager';
 import { BillImportModal } from './components/BillImportModal';
@@ -186,6 +187,15 @@ export function App() {
           profile={profile}
           isPrivacyMode={isPrivacyMode}
           onUpdateProfile={setProfile}
+        />
+
+        {/* Trend Line Chart (按天、月、小时观测收入、支出、负债进度、存钱进度) */}
+        <TrendChartCard
+          profile={profile}
+          liabilities={liabilities}
+          incomeSources={incomeSources}
+          transactions={transactions}
+          isPrivacyMode={isPrivacyMode}
         />
 
         {/* Custom Income Sources (配偶/房租/利息) */}

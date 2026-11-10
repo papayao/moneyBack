@@ -4,6 +4,7 @@ import {
   calculateSalaryPerSecond,
   calculateDailyDebtCost,
   calculateTickerSnapshot,
+  generateTrendData,
   parseWechatBill,
   parseAlipayBill,
   UserProfile,
@@ -96,6 +97,21 @@ describe('SalaryTicker Engine', () => {
     expect(snapshot.additionalIncomeMonthly).toBe(13875);
     expect(snapshot.totalMonthlyIncome).toBe(35625);
     expect(snapshot.earnedToday).toBeGreaterThan(625);
+  });
+
+  it('generates hourly, daily, and monthly trend data accurately', () => {
+    const hourly = generateTrendData('hourly', mockProfile, mockLiabilities);
+    expect(hourly).toHaveLength(8);
+    expect(hourly[0].label).toBe('09:00');
+    expect(hourly[hourly.length - 1].income).toBeGreaterThan(0);
+
+    const daily = generateTrendData('daily', mockProfile, mockLiabilities);
+    expect(daily).toHaveLength(14);
+    expect(daily[daily.length - 1].remainingDebt).toBe(mockLiabilities[0].remainingAmount);
+
+    const monthly = generateTrendData('monthly', mockProfile, mockLiabilities);
+    expect(monthly).toHaveLength(12);
+    expect(monthly[0].label).toBe('1月');
   });
 });
 
