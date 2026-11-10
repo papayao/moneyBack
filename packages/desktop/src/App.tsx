@@ -138,6 +138,7 @@ export function App() {
           snapshot={snapshot}
           profile={profile}
           isPrivacyMode={isPrivacyMode}
+          onUpdateProfile={setProfile}
         />
 
         {/* Liabilities */}

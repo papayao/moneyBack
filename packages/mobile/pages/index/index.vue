@@ -64,8 +64,8 @@
     <view class="savings-card">
       <view class="savings-header">
         <text class="savings-title">存钱目标进度</text>
-        <text class="savings-ratio mono-num">
-          {{ isPrivacy ? '***' : '¥' + profile.currentSavings }} / {{ isPrivacy ? '***' : '¥' + profile.targetSavings }}
+        <text class="savings-ratio mono-num" @click="promptEditSavings">
+          {{ isPrivacy ? '***' : '¥' + profile.currentSavings }} (点击修改) / {{ isPrivacy ? '***' : '¥' + profile.targetSavings }}
         </text>
       </view>
       <view class="progress-track">
@@ -184,6 +184,24 @@ export default {
     },
     toggleLandscape() {
       this.isLandscape = !this.isLandscape;
+    },
+    promptEditSavings() {
+      uni.showModal({
+        title: '修改当前存款',
+        editable: true,
+        placeholderText: '请输入最新存款金额 (元)',
+        content: String(this.profile.currentSavings),
+        success: (res) => {
+          if (res.confirm && res.content) {
+            const val = parseFloat(res.content);
+            if (!isNaN(val)) {
+              this.profile.currentSavings = val;
+              uni.setStorageSync('st_profile', JSON.stringify(this.profile));
+              this.tick();
+            }
+          }
+        },
+      });
     },
   },
 };

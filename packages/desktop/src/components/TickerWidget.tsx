@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TickerSnapshot, UserProfile } from '@salary-ticker/core';
-import { TrendingDown, TrendingUp, Target, Clock, ShieldAlert } from 'lucide-react';
+import { TrendingDown, TrendingUp, Target, Clock, ShieldAlert, Edit2, Check } from 'lucide-react';
 import { RollingNumber } from './RollingNumber';
 import { BackgroundBeamsWithCollision } from './ui/background-beams-with-collision';
 
@@ -8,13 +8,32 @@ interface TickerWidgetProps {
   snapshot: TickerSnapshot;
   profile: UserProfile;
   isPrivacyMode: boolean;
+  onUpdateProfile?: (profile: UserProfile) => void;
 }
 
 export const TickerWidget: React.FC<TickerWidgetProps> = ({
   snapshot,
   profile,
   isPrivacyMode,
+  onUpdateProfile,
 }) => {
+  const [isEditingSavings, setIsEditingSavings] = useState(false);
+  const [editSavingsVal, setEditSavingsVal] = useState(profile.currentSavings.toString());
+
+  const handleSaveSavings = () => {
+    const val = parseFloat(editSavingsVal);
+    if (!isNaN(val) && onUpdateProfile) {
+      onUpdateProfile({ ...profile, currentSavings: val });
+    }
+    setIsEditingSavings(false);
+  };
+
+  const handleQuickAdjust = (delta: number) => {
+    if (onUpdateProfile) {
+      const next = Math.max(0, profile.currentSavings + delta);
+      onUpdateProfile({ ...profile, currentSavings: next });
+    }
+  };
   const formatMoney = (val: number, forceSign = false) => {
     if (isPrivacyMode) return '****';
     const formatted = Math.abs(val).toFixed(2);
@@ -139,11 +158,84 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
             <Target className="w-3.5 h-3.5 text-zinc-400" />
             <span>存钱目标达成进度</span>
           </div>
-          <div className="flex items-center gap-1 font-mono text-zinc-400">
-            <span>{isPrivacyMode ? '***' : formatMoney(profile.currentSavings)}</span>
-            <span className="text-zinc-600">/</span>
-            <span className="text-zinc-300">{isPrivacyMode ? '***' : formatMoney(profile.targetSavings)}</span>
+
+          <div className="flex items-center gap-2 font-mono text-zinc-400">
+            {isEditingSavings ? (
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  value={editSavingsVal}
+                  onChange={e => setEditSavingsVal(e.target.value)}
+                  className="bg-zinc-950 border border-zinc-600 px-1.5 py-0.5 rounded-sm text-xs font-mono text-zinc-100 w-24 focus:outline-none"
+                  autoFocus
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleSaveSavings();
+                    if (e.key === 'Escape') setIsEditingSavings(false);
+                  }}
+                />
+                <button
+                  onClick={handleSaveSavings}
+                  className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-sm text-[11px] font-sans"
+                >
+                  保存
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <span
+                  onClick={() => {
+                    setEditSavingsVal(profile.currentSavings.toString());
+                    setIsEditingSavings(true);
+                  }}
+                  title="点击直接修改当前存款"
+                  className="cursor-pointer text-zinc-200 hover:text-white border-b border-dashed border-zinc-600 hover:border-zinc-300 transition"
+                >
+                  {isPrivacyMode ? '***' : formatMoney(profile.currentSavings)}
+                </span>
+                <button
+                  onClick={() => {
+                    setEditSavingsVal(profile.currentSavings.toString());
+                    setIsEditingSavings(true);
+                  }}
+                  title="修改当前存款"
+                  className="text-zinc-500 hover:text-zinc-300"
+                >
+                  <Edit2 className="w-3 h-3" />
+                </button>
+                <span className="text-zinc-600">/</span>
+                <span className="text-zinc-400">{isPrivacyMode ? '***' : formatMoney(profile.targetSavings)}</span>
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Quick adjustment buttons */}
+        <div className="flex items-center gap-1.5 mb-2">
+          <span className="text-[10px] text-zinc-500">快速变动:</span>
+          <button
+            onClick={() => handleQuickAdjust(500)}
+            className="px-1.5 py-0.5 bg-zinc-950 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 rounded-sm text-[10px] font-mono transition"
+          >
+            +500
+          </button>
+          <button
+            onClick={() => handleQuickAdjust(1000)}
+            className="px-1.5 py-0.5 bg-zinc-950 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 rounded-sm text-[10px] font-mono transition"
+          >
+            +1000
+          </button>
+          <button
+            onClick={() => handleQuickAdjust(5000)}
+            className="px-1.5 py-0.5 bg-zinc-950 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 rounded-sm text-[10px] font-mono transition"
+          >
+            +5000
+          </button>
+          <button
+            onClick={() => handleQuickAdjust(-1000)}
+            className="px-1.5 py-0.5 bg-zinc-950 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 border border-zinc-800 rounded-sm text-[10px] font-mono transition ml-auto"
+          >
+            -1000 (支出)
+          </button>
         </div>
 
         {/* Progress Bar */}
