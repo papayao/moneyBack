@@ -88,3 +88,109 @@ textarea:focus {
 ::-webkit-scrollbar-thumb:hover {
   background: rgb(0 0 0 / 0.3);
 }
+
+/* Focus Mode button: clean by default, morphs into animated 8-bit pixel style on hover */
+.focus-pixel-btn {
+  position: relative;
+  overflow: hidden;
+  background-color: #1d1d1f;
+  color: #fcd34d;
+  border-radius: 2px;
+  border: 1px solid #1d1d1f;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+  transition:
+    border-radius 120ms steps(3, end),
+    box-shadow 140ms steps(3, end),
+    background-color 140ms steps(2, end),
+    letter-spacing 140ms steps(3, end),
+    transform 100ms steps(2, end);
+}
+
+.focus-pixel-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgb(252 211 77 / 0.14) 0px,
+    rgb(252 211 77 / 0.14) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  transition: opacity 120ms steps(2, end);
+}
+
+.focus-pixel-btn:hover {
+  border-radius: 0;
+  border-color: transparent;
+  background-color: #18181b;
+  letter-spacing: 0.08em;
+  box-shadow:
+    0 -2px 0 0 #fcd34d,
+    0 2px 0 0 #fcd34d,
+    -2px 0 0 0 #fcd34d,
+    2px 0 0 0 #fcd34d,
+    3px 3px 0 0 #92400e;
+  animation: focus-pixel-border 0.5s steps(2, end) infinite;
+}
+
+.focus-pixel-btn:hover::after {
+  opacity: 1;
+  animation: focus-pixel-scan 0.6s steps(4, end) infinite;
+}
+
+.focus-pixel-btn:hover .focus-pixel-label {
+  display: inline-block;
+  font-weight: 700;
+  animation: focus-pixel-bob 0.5s steps(2, end) infinite;
+}
+
+.focus-pixel-btn:active {
+  animation: none;
+  transform: translate(2px, 2px);
+  box-shadow:
+    0 -2px 0 0 #fcd34d,
+    0 2px 0 0 #fcd34d,
+    -2px 0 0 0 #fcd34d,
+    2px 0 0 0 #fcd34d,
+    1px 1px 0 0 #92400e;
+}
+
+@keyframes focus-pixel-border {
+  0%, 100% {
+    box-shadow:
+      0 -2px 0 0 #fcd34d,
+      0 2px 0 0 #fcd34d,
+      -2px 0 0 0 #fcd34d,
+      2px 0 0 0 #fcd34d,
+      3px 3px 0 0 #92400e;
+  }
+  50% {
+    box-shadow:
+      0 -2px 0 0 #fef08a,
+      0 2px 0 0 #fef08a,
+      -2px 0 0 0 #fef08a,
+      2px 0 0 0 #fef08a,
+      4px 4px 0 0 #b45309;
+  }
+}
+
+@keyframes focus-pixel-bob {
+  0%, 100% {
+    transform: translateY(-1px);
+  }
+  50% {
+    transform: translateY(1px);
+  }
+}
+
+@keyframes focus-pixel-scan {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 4px;
+  }
+}

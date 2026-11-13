@@ -20,7 +20,6 @@ import {
   Coins,
   X,
   CircleAlert,
-  Maximize2,
 } from 'lucide-react';
 import { RollingNumber } from './RollingNumber';
 import { BackgroundBeamsWithCollision } from './ui/background-beams-with-collision';
@@ -244,18 +243,17 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   <span className="font-mono text-zinc-500">
                     ¥{currentHourlyRate}/时
                   </span>
                   {onToggleFocus && (
                     <button
                       onClick={onToggleFocus}
-                      title="进入专注模式"
-                      className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-zinc-700 hover:text-zinc-900 bg-white/80 hover:bg-white rounded-sm border border-zinc-200/90 shadow-2xs transition cursor-pointer"
+                      title="进入沉浸专注模式"
+                      className="focus-pixel-btn inline-flex items-center px-2.5 py-1 text-xs font-medium cursor-pointer"
                     >
-                      <Maximize2 className="w-3 h-3 text-zinc-500" />
-                      <span>专注</span>
+                      <span className="focus-pixel-label">专注模式</span>
                     </button>
                   )}
                 </div>

@@ -10,19 +10,28 @@ const RollingDigit: React.FC<RollingDigitProps> = React.memo(({ char }) => {
   const isDigit = DIGITS.includes(char);
 
   if (!isDigit) {
-    return <span className="inline-flex items-center justify-center select-none h-[1.1em] leading-[1.1em]">{char}</span>;
+    return (
+      <span className="inline-flex items-center justify-center h-[1.2em] leading-none select-none">
+        {char}
+      </span>
+    );
   }
 
   const num = parseInt(char, 10);
 
   return (
-    <span className="inline-flex items-start justify-center h-[1.1em] overflow-hidden leading-[1.1em] select-none">
+    <span className="relative inline-flex items-center justify-center h-[1.2em] overflow-hidden leading-none select-none">
+      <span className="invisible leading-none">{char}</span>
       <span
-        className="flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]"
-        style={{ transform: `translateY(-${num * 10}%)` }}
+        className="absolute inset-x-0 top-0 h-full transition-transform duration-150 ease-[cubic-bezier(0.25,1,0.5,1)]"
+        style={{ transform: `translateY(-${num * 100}%)` }}
       >
-        {DIGITS.map(d => (
-          <span key={d} className="h-[1.1em] leading-[1.1em] shrink-0 flex items-center justify-center">
+        {DIGITS.map((d, idx) => (
+          <span
+            key={d}
+            className="absolute inset-x-0 h-full flex items-center justify-center leading-none"
+            style={{ top: `${idx * 100}%` }}
+          >
             {d}
           </span>
         ))}
