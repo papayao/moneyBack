@@ -16,13 +16,13 @@ const RollingDigit: React.FC<RollingDigitProps> = React.memo(({ char }) => {
   const num = parseInt(char, 10);
 
   return (
-    <span className="inline-block h-[1.1em] overflow-hidden leading-[1.1em] align-baseline select-none">
+    <span className="inline-flex items-start justify-center h-[1.1em] overflow-hidden leading-[1.1em] select-none">
       <span
         className="flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]"
         style={{ transform: `translateY(-${num * 10}%)` }}
       >
         {DIGITS.map(d => (
-          <span key={d} className="h-[1.1em] leading-[1.1em] flex items-center justify-center">
+          <span key={d} className="h-[1.1em] leading-[1.1em] shrink-0 flex items-center justify-center">
             {d}
           </span>
         ))}
@@ -42,7 +42,7 @@ export const RollingNumber: React.FC<RollingNumberProps> = ({ value, className =
   const total = chars.length;
 
   return (
-    <span className={`inline-flex items-baseline ticker-digits font-mono tracking-tight ${className}`}>
+    <span className={`inline-flex items-center ticker-digits font-mono tracking-tight leading-none ${className}`}>
       {chars.map((char, idx) => (
         <RollingDigit key={`col-${total - idx}-${char === '.' ? 'dot' : 'char'}`} char={char} />
       ))}
