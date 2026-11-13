@@ -25,6 +25,10 @@ export const LiabilitiesManager: React.FC<LiabilitiesManagerProps> = ({
   const [newRemaining, setNewRemaining] = useState('');
   const [newMonthly, setNewMonthly] = useState('');
   const [newRepayDay, setNewRepayDay] = useState('10');
+  const [newStartDate, setNewStartDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
 
   const totalDebtRemainingLive = snapshot?.totalDebtRemainingLive ?? 0;
   const totalDebt = snapshot?.totalDebt ?? 0;
@@ -48,6 +52,7 @@ export const LiabilitiesManager: React.FC<LiabilitiesManagerProps> = ({
       remainingAmount: remainingAmt,
       monthlyPayment: parseFloat(newMonthly) || 0,
       repayDay: parseInt(newRepayDay) || 10,
+      startDate: newStartDate || undefined,
       status: 'active',
     });
 
@@ -119,7 +124,7 @@ export const LiabilitiesManager: React.FC<LiabilitiesManagerProps> = ({
         <div className="bg-zinc-50/70 border border-zinc-200/80 rounded-sm p-3 space-y-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-zinc-600 gap-1.5">
             <span className="font-mono">
-              清偿进度:{' '}
+              还贷进度:{' '}
               <strong className="text-zinc-900 font-semibold">{debtPayoffPercent}%</strong>
               <span className="text-zinc-400 ml-1.5 font-normal">
                 (已还 ¥{totalDebtPaid.toLocaleString()} / 总额 ¥{totalDebt.toLocaleString()})
@@ -221,6 +226,33 @@ export const LiabilitiesManager: React.FC<LiabilitiesManagerProps> = ({
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs text-zinc-600 mb-1">起始日期</label>
+              <input
+                type="date"
+                value={newStartDate}
+                onChange={e => setNewStartDate(e.target.value)}
+                className="w-full bg-white border border-zinc-300 rounded-sm px-2 py-1 text-xs text-zinc-900 font-mono focus:outline-none focus:border-zinc-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-600 mb-1">每月还款日</label>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  min="1"
+                  max="31"
+                  placeholder="10"
+                  value={newRepayDay}
+                  onChange={e => setNewRepayDay(e.target.value)}
+                  className="w-full bg-white border border-zinc-300 rounded-sm px-2 py-1 text-xs text-zinc-900 font-mono focus:outline-none focus:border-zinc-500"
+                />
+                <span className="text-xs text-zinc-500 whitespace-nowrap">日</span>
+              </div>
+            </div>
+          </div>
+
           <div className="flex justify-end gap-2 pt-1">
             <button
               type="button"
@@ -256,8 +288,13 @@ export const LiabilitiesManager: React.FC<LiabilitiesManagerProps> = ({
                   {getTypeIcon(item.type)}
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-xs font-medium text-zinc-900">{item.title}</span>
+                    {item.startDate && (
+                      <span className="text-[10px] font-mono px-1 rounded-sm bg-white border border-zinc-200 text-zinc-500">
+                        起于 {item.startDate}
+                      </span>
+                    )}
                     <span className="text-[10px] font-mono px-1 rounded-sm bg-white border border-zinc-200 text-zinc-500">
                       每月 {item.repayDay} 日还款
                     </span>

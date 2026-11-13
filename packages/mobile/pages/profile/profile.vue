@@ -82,7 +82,7 @@ export default {
 <style scoped>
 .container {
   padding: 32rpx;
-  background-color: #f4f4f5;
+  background-color: transparent;
   min-height: 100vh;
 }
 .header-section {
@@ -101,9 +101,12 @@ export default {
   display: block;
 }
 .form-box {
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 1rpx 0 rgba(255,255,255,0.8) inset, 0 8rpx 32rpx rgba(0,0,0,0.06);
   border: 1rpx solid #e4e4e7;
-  border-radius: 8rpx;
+  border-radius: 20rpx;
   padding: 24rpx;
 }
 .form-item {
@@ -123,20 +126,20 @@ export default {
   display: block;
 }
 .input {
-  background-color: #f4f4f5;
+  background-color: rgba(120, 120, 128, 0.12);
   border: 1rpx solid #e4e4e7;
-  border-radius: 4rpx;
+  border-radius: 10rpx;
   color: #18181b;
   font-size: 26rpx;
   padding: 16rpx;
-  font-family: monospace;
+  font-family: -apple-system, 'SF Pro Display', sans-serif; font-variant-numeric: tabular-nums;
 }
 .save-btn {
-  background-color: #18181b;
+  background-color: #1d1d1f;
   color: #ffffff;
   font-size: 26rpx;
   font-weight: bold;
-  border-radius: 4rpx;
+  border-radius: 10rpx;
   margin-top: 16rpx;
 }
 </style>

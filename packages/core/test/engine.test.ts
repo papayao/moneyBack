@@ -122,19 +122,123 @@ describe('SalaryTicker Engine', () => {
     expect(partnerItem?.isCurrentlyActive).toBe(true);
   });
 
-  it('generates hourly, daily, and monthly trend data accurately', () => {
-    const hourly = generateTrendData('hourly', mockProfile, mockLiabilities);
-    expect(hourly).toHaveLength(8);
-    expect(hourly[0].label).toBe('09:00');
-    expect(hourly[hourly.length - 1].income).toBeGreaterThan(0);
+  it('generates hourly, daily, and monthly trend data accurately with period debt progress', () => {
+    const extraIncomes = [
+      {
+        id: 1,
+        title: '副业流式收入',
+        type: 'side_hustle' as const,
+        amount: 10875,
+        frequency: 'monthly' as const,
+        workStartTime: '09:00',
+        workEndTime: '18:00',
+      },
+    ];
 
-    const daily = generateTrendData('daily', mockProfile, mockLiabilities);
-    expect(daily).toHaveLength(14);
-    expect(daily[daily.length - 1].remainingDebt).toBe(mockLiabilities[0].remainingAmount);
+    const hourlyMain = generateTrendData('hourly', mockProfile, mockLiabilities, extraIncomes, [], 'main');
+    const hourlyTotal = generateTrendData('hourly', mockProfile, mockLiabilities, extraIncomes, [], 'total');
+    expect(hourlyMain).toHaveLength(8);
+    expect(hourlyMain[0].label).toBe('09:00');
+    expect(hourlyMain[0].debtProgress).toBe(0);
+    // By 12:00, earned income > dailyDebt (300), so debtProgress reaches 100%
+    expect(hourlyMain[2].debtProgress).toBe(100);
+    expect(hourlyTotal[1].income).toBeGreaterThan(hourlyMain[1].income);
 
-    const monthly = generateTrendData('monthly', mockProfile, mockLiabilities);
+    const daily = generateTrendData('daily', mockProfile, mockLiabilities, extraIncomes, [], 'main');
+    const now = new Date();
+    const expectedMonthPrefix = String(now.getMonth() + 1).padStart(2, '0');
+    expect(daily).toHaveLength(now.getDate());
+    expect(daily[0].label).toBe(`${expectedMonthPrefix}-01`);
+    expect(daily[daily.length - 1].debtProgress).toBeGreaterThan(0);
+    // 所有日期的应还负债均恒定有效，周末绝不为 0，且月内还贷进度单调不减
+    daily.forEach((point, idx) => {
+      expect(point.debtCost).toBeGreaterThan(0);
+      if (idx > 0) {
+        expect(point.debtProgress).toBeGreaterThanOrEqual(daily[idx - 1].debtProgress);
+      }
+    });
+
+    // 未来起始日期的负债，在天维度进度应为 0% 而非 100%
+    const futureOnly = [{ ...mockLiabilities[0], startDate: '2099-01-01' }];
+    const dailyFuture = generateTrendData('daily', mockProfile, futureOnly, extraIncomes, [], 'main');
+    expect(dailyFuture[0].debtProgress).toBe(0);
+
+    const monthly = generateTrendData('monthly', mockProfile, mockLiabilities, extraIncomes, [], 'main');
     expect(monthly).toHaveLength(12);
     expect(monthly[0].label).toBe('1月');
+    expect(monthly[0].debtProgress).toBeGreaterThan(0);
+  });
+
+  it('filters liabilities accurately by startDate', () => {
+    const futureLiabilities: Liability[] = [
+      {
+        id: 99,
+        type: 'custom',
+        title: '未来借款',
+        totalAmount: 100000,
+        remainingAmount: 100000,
+        monthlyPayment: 5000,
+        repayDay: 1,
+        startDate: '2099-01-01',
+      },
+    ];
+    const futureDailyDebt = calculateDailyDebtCost(futureLiabilities, 20, new Date());
+    expect(futureDailyDebt).toBe(0);
+
+    const pastLiabilities: Liability[] = [
+      {
+        id: 98,
+        type: 'custom',
+        title: '过去借款',
+        totalAmount: 100000,
+        remainingAmount: 100000,
+        monthlyPayment: 2000,
+        repayDay: 1,
+        startDate: '2020-01-01',
+      },
+    ];
+    const pastDailyDebt = calculateDailyDebtCost(pastLiabilities, 20, new Date());
+    expect(pastDailyDebt).toBe(100);
+  });
+
+  it('stops at workEndTime and handles paid vs comp_leave overtime for today only', () => {
+    const evening = new Date(2026, 10, 13, 19, 0, 0); // 19:00 (after 18:00)
+
+    // 1. Default off-duty state
+    const offSnap = calculateTickerSnapshot(mockProfile, mockLiabilities, evening);
+    expect(offSnap.isAfterWork).toBe(true);
+    expect(offSnap.isWorkingTime).toBe(false);
+    expect(offSnap.mainLaborEarnedToday).toBe(1000);
+
+    // 2. Paid overtime (2h starting 18:00 -> 1h elapsed at 19:00)
+    const paidProfile = {
+      ...mockProfile,
+      todayOvertime: { date: '2026-11-13', hours: 2, rewardType: 'paid' as const, startSec: 18 * 3600 },
+    };
+    const paidSnap = calculateTickerSnapshot(paidProfile, mockLiabilities, evening);
+    expect(paidSnap.isOvertimeActive).toBe(true);
+    expect(paidSnap.isWorkingTime).toBe(true);
+    expect(paidSnap.overtimeEarnedToday).toBeCloseTo(111.11, 1);
+    expect(paidSnap.mainLaborEarnedToday).toBeCloseTo(1111.11, 1);
+
+    // 3. Comp-leave overtime (time resumes without extra cash)
+    const compProfile = {
+      ...mockProfile,
+      todayOvertime: { date: '2026-11-13', hours: 2, rewardType: 'comp_leave' as const, startSec: 18 * 3600 },
+    };
+    const compSnap = calculateTickerSnapshot(compProfile, mockLiabilities, evening);
+    expect(compSnap.isOvertimeActive).toBe(true);
+    expect(compSnap.overtimeEarnedToday).toBe(0);
+    expect(compSnap.mainLaborEarnedToday).toBe(1000);
+
+    // 4. Stale yesterday overtime ignored today
+    const staleProfile = {
+      ...mockProfile,
+      todayOvertime: { date: '2026-11-12', hours: 3, rewardType: 'paid' as const, startSec: 18 * 3600 },
+    };
+    const staleSnap = calculateTickerSnapshot(staleProfile, mockLiabilities, evening);
+    expect(staleSnap.isOvertimeActive).toBe(false);
+    expect(staleSnap.overtimeEarnedToday).toBe(0);
   });
 });
 

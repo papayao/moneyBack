@@ -120,12 +120,14 @@ export const BackgroundBeamsWithCollision: React.FC<BackgroundBeamsProps> = ({
         />
       ))}
 
-      <div ref={containerRef} className="relative z-20 w-full">
+      <div className="relative z-20 w-full">
         {children}
       </div>
 
+      {/* Bottom collision floor */}
       <div
-        className="absolute inset-0 pointer-events-none bg-gradient-to-t from-white/70 via-transparent to-transparent z-10"
+        ref={containerRef}
+        className="absolute bottom-0 inset-x-0 h-1.5 w-full pointer-events-none"
       />
     </div>
   );
@@ -160,11 +162,12 @@ const CollisionMechanism: React.FC<{
         const beamRect = beamRef.current.getBoundingClientRect();
         const containerRect = containerRef.current.getBoundingClientRect();
         const parentRect = parentRef.current.getBoundingClientRect();
+        const streamHeadBottom = beamRect.bottom + (beamOptions.hasDollar ? 16 : 0);
 
-        if (beamRect.bottom >= containerRect.top + 60) {
+        if (streamHeadBottom >= containerRect.top) {
           cycleCollisionDetectedRef.current = true;
           const relativeX = beamRect.left - parentRect.left + beamRect.width / 2;
-          const relativeY = beamRect.bottom - parentRect.top;
+          const relativeY = parentRect.height - 4;
 
           setCollision({
             detected: true,
@@ -174,68 +177,63 @@ const CollisionMechanism: React.FC<{
       }
     };
 
-    const interval = setInterval(checkCollision, 50);
+    const interval = setInterval(checkCollision, 30);
     return () => clearInterval(interval);
-  }, [containerRef, parentRef]);
+  }, [containerRef, parentRef, beamKey]);
 
   useEffect(() => {
-    if (collision.detected) {
-      const timer = setTimeout(() => {
-        setCollision({ detected: false, coordinates: null });
-        cycleCollisionDetectedRef.current = false;
-      }, 2000);
+    if (!collision.detected) return;
 
-      const nextCycleTimer = setTimeout(() => {
-        setBeamKey(prev => prev + 1);
-      }, (beamOptions.duration + beamOptions.repeatDelay) * 1000);
+    const resetTimer = setTimeout(() => {
+      setCollision({ detected: false, coordinates: null });
+      cycleCollisionDetectedRef.current = false;
+      setBeamKey(prev => prev + 1);
+    }, 1400);
 
-      return () => {
-        clearTimeout(timer);
-        clearTimeout(nextCycleTimer);
-      };
-    }
-  }, [collision.detected, beamOptions]);
+    return () => clearTimeout(resetTimer);
+  }, [collision.detected]);
 
   // Color schemes (Emerald/Rose streams, without garish AI purple/blue)
   const beamGradient = isPositive
-    ? 'from-emerald-500 via-emerald-400 to-transparent'
-    : 'from-rose-500 via-rose-400 to-transparent';
+    ? 'from-transparent via-emerald-400 to-emerald-500'
+    : 'from-transparent via-rose-400 to-rose-500';
 
   return (
     <>
-      <motion.div
-        key={beamKey}
-        ref={beamRef}
-        animate={{
-          translateY: ['0px', '450px'],
-          opacity: [0, 1, 1, 0],
-        }}
-        transition={{
-          duration: beamOptions.duration,
-          repeat: Infinity,
-          repeatDelay: beamOptions.repeatDelay,
-          delay: beamOptions.delay,
-          ease: 'linear',
-        }}
-        style={{
-          position: 'absolute',
-          left: `${beamOptions.initialX}px`,
-          top: '-150px',
-        }}
-        className={`w-[2px] h-[140px] bg-gradient-to-b ${beamGradient} z-10 pointer-events-none rounded-full`}
-      >
-        {/* Stream head carrying a small glowing yellow/orange $ symbol */}
-        {beamOptions.hasDollar && (
-          <div className="absolute -bottom-2.5 -left-2 pointer-events-none select-none">
-            <DollarSymbol size={15} />
-          </div>
-        )}
-      </motion.div>
+      {!collision.detected && (
+        <motion.div
+          key={beamKey}
+          ref={beamRef}
+          initial={{ translateY: '0px', opacity: 0.95 }}
+          animate={{
+            translateY: '750px',
+            opacity: 1,
+          }}
+          transition={{
+            duration: beamOptions.duration,
+            delay: beamKey === 0 ? beamOptions.delay : beamOptions.repeatDelay * 0.5,
+            ease: 'linear',
+          }}
+          style={{
+            position: 'absolute',
+            left: `${beamOptions.initialX}px`,
+            top: '-150px',
+          }}
+          className={`w-[2px] h-[120px] bg-gradient-to-b ${beamGradient} z-10 pointer-events-none rounded-full`}
+        >
+          {/* Stream head carrying a small glowing yellow/orange $ symbol */}
+          {beamOptions.hasDollar && (
+            <div className="absolute -bottom-[17px] left-1/2 -translate-x-1/2 pointer-events-none select-none">
+              <DollarSymbol size={18} />
+            </div>
+          )}
+        </motion.div>
+      )}
 
       <AnimatePresence>
         {collision.detected && collision.coordinates && (
           <Explosion
-            key={`${collision.coordinates.x}-${collision.coordinates.y}`}
+            key={`${beamKey}-${collision.coordinates.x}`}
             x={collision.coordinates.x}
             y={collision.coordinates.y}
             isPositive={isPositive}
@@ -251,7 +249,7 @@ const Explosion: React.FC<{ x: number; y: number; isPositive: boolean }> = ({
   y,
   isPositive,
 }) => {
-  const particles = Array.from({ length: 6 });
+  const particles = Array.from({ length: 10 });
   const dollarParticles = Array.from({ length: 4 });
   const particleColor = isPositive ? '#10b981' : '#f43f5e';
 
@@ -263,57 +261,58 @@ const Explosion: React.FC<{ x: number; y: number; isPositive: boolean }> = ({
         top: `${y}px`,
         transform: 'translate(-50%, -50%)',
       }}
-      className="pointer-events-none z-10"
+      className="pointer-events-none z-30"
     >
-      {/* Shockwave ring */}
+      {/* Bottom impact flash bar */}
       <motion.div
-        initial={{ scale: 0, opacity: 0.8 }}
-        animate={{ scale: 2.2, opacity: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        style={{ borderColor: particleColor }}
-        className="w-8 h-8 rounded-full border border-opacity-60"
+        initial={{ width: 0, opacity: 1 }}
+        animate={{ width: 56, opacity: 0 }}
+        transition={{ duration: 0.55, ease: 'easeOut' }}
+        style={{ backgroundColor: particleColor }}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[2px] rounded-full blur-[0.5px]"
       />
 
-      {/* Spark dots */}
+      {/* Upward-splashing spark shards */}
       {particles.map((_, i) => {
-        const angle = (i / particles.length) * 360;
+        // Fan out across upward hemisphere (-165deg to -15deg) so shards splash upward from the bottom floor
+        const angle = -165 + (i / (particles.length - 1)) * 150;
         const rad = (angle * Math.PI) / 180;
-        const dist = 24 + Math.random() * 14;
+        const dist = 22 + ((i * 13) % 24);
         const targetX = Math.cos(rad) * dist;
         const targetY = Math.sin(rad) * dist;
 
         return (
           <motion.div
             key={`dot-${i}`}
-            initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
+            initial={{ x: 0, y: 0, scale: 1.1, opacity: 1 }}
             animate={{ x: targetX, y: targetY, scale: 0, opacity: 0 }}
-            transition={{ duration: 0.5 + Math.random() * 0.2, ease: 'easeOut' }}
+            transition={{ duration: 0.55 + (i % 3) * 0.1, ease: 'easeOut' }}
             style={{ backgroundColor: particleColor }}
             className="absolute top-1/2 left-1/2 w-1.5 h-1.5 rounded-full"
           />
         );
       })}
 
-      {/* Bursting Yellow/Orange $ Symbols */}
+      {/* Upward-splashing Yellow/Orange $ Symbols */}
       {dollarParticles.map((_, i) => {
-        const angle = (i / dollarParticles.length) * 360 + 25;
+        const angle = -150 + (i / (dollarParticles.length - 1)) * 120;
         const rad = (angle * Math.PI) / 180;
-        const dist = 28 + Math.random() * 18;
+        const dist = 28 + ((i * 11) % 20);
         const targetX = Math.cos(rad) * dist;
         const targetY = Math.sin(rad) * dist;
 
         return (
           <motion.div
             key={`dollar-${i}`}
-            initial={{ x: 0, y: 0, scale: 0.9, opacity: 1, rotate: 0 }}
+            initial={{ x: 0, y: 0, scale: 0.95, opacity: 1, rotate: 0 }}
             animate={{
               x: targetX,
               y: targetY,
-              scale: 0.2,
+              scale: 0.25,
               opacity: 0,
-              rotate: Math.random() * 60 - 30,
+              rotate: (i % 2 === 0 ? 1 : -1) * 35,
             }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
+            transition={{ duration: 0.75, ease: 'easeOut' }}
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none"
           >
             <DollarSymbol size={14} />

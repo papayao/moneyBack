@@ -9,11 +9,12 @@ export default {
     extend: {
       fontFamily: {
         sans: [
-          '"Geist Sans"',
-          'Geist',
-          'Inter',
           '-apple-system',
           'BlinkMacSystemFont',
+          '"SF Pro Text"',
+          '"SF Pro Display"',
+          '"Helvetica Neue"',
+          '"Segoe UI Variable"',
           '"Segoe UI"',
           '"PingFang SC"',
           '"Hiragino Sans GB"',

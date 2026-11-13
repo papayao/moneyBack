@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <view class="container" :class="{ 'landscape-mode': isLandscape }">
     <!-- Top Action Bar -->
     <view class="top-bar">
@@ -57,23 +57,9 @@
         <text class="stat-title">今日负债</text>
         <text class="stat-value mono-num text-negative">{{ isPrivacy ? '****' : '¥' + snapshot.dailyDebtCost.toFixed(2) }}</text>
       </view>
-    </view>
-
-    <!-- Lifetime Totals (总所得 & 总花费) -->
-    <view class="stats-grid">
-      <view class="stat-card" @click="promptEditLaborEarnings">
-        <text class="stat-title">总所得</text>
-        <text class="stat-value mono-num text-positive">
-          {{ isPrivacy ? '****' : '¥' + (snapshot.totalLaborEarningsLive ? snapshot.totalLaborEarningsLive.toFixed(2) : '0.00') }}
-        </text>
-        <text class="stat-sub mono-num">今日 +¥{{ snapshot.earnedToday.toFixed(2) }}</text>
-      </view>
-      <view class="stat-card">
-        <text class="stat-title">总花费</text>
-        <text class="stat-value mono-num text-debt">
-          {{ isPrivacy ? '****' : '¥' + (snapshot.totalExpensesLive ? snapshot.totalExpensesLive.toFixed(2) : '0.00') }}
-        </text>
-        <text class="stat-sub mono-num">生活 ¥{{ (snapshot.totalLivingExpenses || 0).toFixed(0) }} + 负债 ¥{{ (snapshot.totalDebt || 0).toFixed(0) }}</text>
+      <view class="stat-card stat-card-wide" @click="promptEditLaborEarnings">
+        <text class="stat-title">总所得 · 主要收入</text>
+        <text class="stat-value mono-num">{{ isPrivacy ? '****' : '¥' + (snapshot.totalLaborEarningsLive || 0).toFixed(2) }}</text>
       </view>
     </view>
 
@@ -314,7 +300,7 @@ export default {
   padding: 32rpx;
   min-height: 100vh;
   box-sizing: border-box;
-  background-color: #f4f4f5;
+  background-color: transparent;
   color: #18181b;
 }
 
@@ -326,7 +312,7 @@ export default {
   left: 0;
   width: 100vh;
   height: 100vw;
-  background-color: #f4f4f5;
+  background-color: rgba(120, 120, 128, 0.12);
 }
 
 .top-bar {
@@ -338,7 +324,7 @@ export default {
 
 .status-badge {
   padding: 6rpx 16rpx;
-  border-radius: 4rpx;
+  border-radius: 10rpx;
   font-size: 22rpx;
   border-width: 1rpx;
   border-style: solid;
@@ -357,7 +343,7 @@ export default {
 }
 
 .badge-off {
-  background-color: #f4f4f5;
+  background-color: rgba(120, 120, 128, 0.12);
   color: #71717a;
   border-color: #e4e4e7;
 }
@@ -368,20 +354,26 @@ export default {
 }
 
 .icon-btn {
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 1rpx 0 rgba(255,255,255,0.8) inset, 0 8rpx 32rpx rgba(0,0,0,0.06);
   border: 1rpx solid #e4e4e7;
   color: #18181b;
   font-size: 22rpx;
   padding: 6rpx 18rpx;
   line-height: 1.5;
-  border-radius: 4rpx;
+  border-radius: 10rpx;
   margin: 0;
 }
 
 .hero-card {
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 1rpx 0 rgba(255,255,255,0.8) inset, 0 8rpx 32rpx rgba(0,0,0,0.06);
   border: 1rpx solid #e4e4e7;
-  border-radius: 8rpx;
+  border-radius: 20rpx;
   padding: 40rpx 32rpx;
   text-align: center;
   margin-bottom: 24rpx;
@@ -396,20 +388,23 @@ export default {
 
 .mode-pills {
   display: flex;
-  background-color: #f4f4f5;
-  border-radius: 6rpx;
+  background-color: rgba(120, 120, 128, 0.12);
+  border-radius: 14rpx;
   padding: 4rpx;
 }
 
 .mode-pill {
   font-size: 20rpx;
   padding: 4rpx 14rpx;
-  border-radius: 4rpx;
+  border-radius: 10rpx;
   color: #71717a;
 }
 
 .mode-pill.active {
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 1rpx 0 rgba(255,255,255,0.8) inset, 0 8rpx 32rpx rgba(0,0,0,0.06);
   color: #18181b;
   font-weight: 600;
   box-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.05);
@@ -457,15 +452,19 @@ export default {
 
 .stats-grid {
   display: flex;
+  flex-wrap: wrap;
   gap: 20rpx;
   margin-bottom: 24rpx;
 }
 
 .stat-card {
   flex: 1;
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 1rpx 0 rgba(255,255,255,0.8) inset, 0 8rpx 32rpx rgba(0,0,0,0.06);
   border: 1rpx solid #e4e4e7;
-  border-radius: 8rpx;
+  border-radius: 20rpx;
   padding: 24rpx;
 }
 
@@ -490,9 +489,12 @@ export default {
 }
 
 .savings-card {
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 1rpx 0 rgba(255,255,255,0.8) inset, 0 8rpx 32rpx rgba(0,0,0,0.06);
   border: 1rpx solid #e4e4e7;
-  border-radius: 8rpx;
+  border-radius: 20rpx;
   padding: 28rpx;
 }
 
@@ -527,9 +529,9 @@ export default {
 
 .progress-track {
   height: 12rpx;
-  background-color: #f4f4f5;
+  background-color: rgba(120, 120, 128, 0.12);
   border: 1rpx solid #e4e4e7;
-  border-radius: 4rpx;
+  border-radius: 10rpx;
   overflow: hidden;
   margin-bottom: 16rpx;
 }
@@ -537,7 +539,7 @@ export default {
 .progress-bar {
   height: 100%;
   background-color: #10b981;
-  border-radius: 4rpx;
+  border-radius: 10rpx;
 }
 
 .savings-footer {
@@ -549,4 +551,8 @@ export default {
   font-size: 20rpx;
   color: #71717a;
 }
+.stat-card-wide {
+  flex: 1 1 100%;
+}
 </style>
+

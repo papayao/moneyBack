@@ -14,6 +14,8 @@ import { LiabilitiesManager } from './components/LiabilitiesManager';
 import { BillImportModal } from './components/BillImportModal';
 import { ProfileModal } from './components/ProfileModal';
 import { MiniFloatWindow } from './components/MiniFloatWindow';
+import { FocusView } from './components/FocusView';
+import { PiggyBankWidget } from './components/PiggyBankWidget';
 
 const DEFAULT_PROFILE: UserProfile = {
   monthlySalary: 20000,
@@ -30,6 +32,7 @@ const DEFAULT_LIABILITIES: Liability[] = [
     id: 1,
     type: 'mortgage',
     title: '按揭房贷',
+    startDate: '2023-01-01',
     totalAmount: 1200000,
     remainingAmount: 950000,
     monthlyPayment: 4200,
@@ -40,6 +43,7 @@ const DEFAULT_LIABILITIES: Liability[] = [
     id: 2,
     type: 'car_loan',
     title: '汽车分期',
+    startDate: '2024-06-01',
     totalAmount: 150000,
     remainingAmount: 48000,
     monthlyPayment: 2100,
@@ -110,6 +114,8 @@ export function App() {
 
   const [isPrivacyMode, setIsPrivacyMode] = useState(false);
   const [isMiniMode, setIsMiniMode] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [incomeDisplayMode, setIncomeDisplayMode] = useState<'main' | 'total'>('main');
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -135,6 +141,16 @@ export function App() {
   }, [transactions]);
 
   // Real-time ticking (every 200ms for ultra-smooth rolling odometer)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFocusMode) {
+        setIsFocusMode(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFocusMode]);
+
   useEffect(() => {
     const update = () => {
       setSnapshot(calculateTickerSnapshot(profile, liabilities, new Date(), transactions, incomeSources));
@@ -181,6 +197,18 @@ export function App() {
     setTransactions(prev => [...newTxs, ...prev]);
   };
 
+  if (isFocusMode) {
+    return (
+      <FocusView
+        snapshot={snapshot}
+        profile={profile}
+        isPrivacyMode={isPrivacyMode}
+        onTogglePrivacy={() => setIsPrivacyMode(!isPrivacyMode)}
+        onExitFocus={() => setIsFocusMode(false)}
+      />
+    );
+  }
+
   if (isMiniMode) {
     return (
       <div className="p-2 bg-transparent min-h-screen flex items-start justify-center">
@@ -217,7 +245,9 @@ export function App() {
           onAddIncomeSource={handleAddIncomeSource}
           onRemoveIncomeSource={handleRemoveIncomeSource}
           onInjectWindfall={handleInjectWindfall}
-          onToggleAmortize={handleToggleAmortize}
+          onToggleFocus={() => setIsFocusMode(true)}
+          incomeDisplayMode={incomeDisplayMode}
+          onChangeIncomeDisplayMode={setIncomeDisplayMode}
         />
 
         {/* Unified Debt Manager & Live Payoff Tracker (负债记录进度条与清单合并单元) */}
@@ -229,13 +259,14 @@ export function App() {
           isPrivacyMode={isPrivacyMode}
         />
 
-        {/* Trend Line Chart (按天、月、小时观测收入、支出、负债进度、存钱进度) */}
+        {/* Trend Line Chart (按天、月、小时观测收入、支出、负债进度) */}
         <TrendChartCard
           profile={profile}
           liabilities={liabilities}
           incomeSources={incomeSources}
           transactions={transactions}
           isPrivacyMode={isPrivacyMode}
+          incomeDisplayMode={incomeDisplayMode}
         />
 
         {/* Recent Transactions / Bills Summary */}
@@ -281,6 +312,21 @@ export function App() {
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
         onImportSuccess={handleImportTransactions}
+      />
+
+      {/* Floating Piggy Bank in Bottom Right */}
+      <PiggyBankWidget
+        currentSavings={profile.currentSavings}
+        isPrivacyMode={isPrivacyMode}
+        onAddSavings={(amount) => {
+          setProfile(prev => ({
+            ...prev,
+            currentSavings: Math.max(0, (prev.currentSavings || 0) + amount),
+          }));
+        }}
+        onUpdateTotalSavings={(total) => {
+          setProfile(prev => ({ ...prev, currentSavings: total }));
+        }}
       />
     </div>
   );
