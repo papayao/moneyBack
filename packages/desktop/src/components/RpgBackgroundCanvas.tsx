@@ -1,10 +1,19 @@
 import React, { useEffect, useRef } from 'react';
+import { getSkyTheme, WeatherCategory } from '../utils/skyTheme';
+import {
+  createSkyParticlePool,
+  drawSkyAndCelestials,
+  drawWeatherParticles,
+} from '../utils/skyCanvasRenderer';
 
 interface RpgBackgroundCanvasProps {
   isPlaying: boolean;
   isWorkingTime: boolean;
   onActivatePlay: () => void;
   onStatsChange?: (stats: { kills: number; combo: number; level: number; exp: number }) => void;
+  weatherCategory?: WeatherCategory;
+  isStorm?: boolean;
+  timeOverrideHour?: number | null;
 }
 
 interface Platform {
@@ -65,6 +74,9 @@ export const RpgBackgroundCanvas: React.FC<RpgBackgroundCanvasProps> = ({
   isPlaying,
   onActivatePlay,
   onStatsChange,
+  weatherCategory = 'clear',
+  isStorm = false,
+  timeOverrideHour = null,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isPlayingRef = useRef(isPlaying);
@@ -76,6 +88,21 @@ export const RpgBackgroundCanvas: React.FC<RpgBackgroundCanvasProps> = ({
   useEffect(() => {
     onStatsChangeRef.current = onStatsChange;
   }, [onStatsChange]);
+
+  const weatherCategoryRef = useRef<WeatherCategory>(weatherCategory);
+  useEffect(() => {
+    weatherCategoryRef.current = weatherCategory;
+  }, [weatherCategory]);
+
+  const isStormRef = useRef<boolean>(isStorm);
+  useEffect(() => {
+    isStormRef.current = isStorm;
+  }, [isStorm]);
+
+  const timeOverrideHourRef = useRef<number | null>(timeOverrideHour);
+  useEffect(() => {
+    timeOverrideHourRef.current = timeOverrideHour;
+  }, [timeOverrideHour]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -148,6 +175,8 @@ export const RpgBackgroundCanvas: React.FC<RpgBackgroundCanvasProps> = ({
 
     let cameraX = 0;
     let nextId = 1;
+    let frameCount = 0;
+    const skyParticles = createSkyParticlePool();
 
     // Procedural platforms & monsters
     const platforms: Platform[] = [];
@@ -649,32 +678,29 @@ export const RpgBackgroundCanvas: React.FC<RpgBackgroundCanvasProps> = ({
         monsters.shift();
       }
 
-      // --- 2. RENDER PARALLAX LAYERS ---
-      // Sky Gradient (crisp serene pixel-world sky)
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
-      skyGrad.addColorStop(0, '#dbeafe');
-      skyGrad.addColorStop(0.55, '#eff6ff');
-      skyGrad.addColorStop(1, '#fef3c7');
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, width, height);
+      frameCount++;
+      const currentWeather = weatherCategoryRef.current;
+      const currentStorm = isStormRef.current;
+      const theme = getSkyTheme(new Date(), currentWeather, timeOverrideHourRef.current);
 
-      // Layer 1: Pixel Clouds (0.08x parallax)
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.78)';
-      const cloudSpan = 420;
-      const cloudOffset = -((cameraX * 0.08) % cloudSpan);
-      for (let cx = cloudOffset - cloudSpan; cx < width + cloudSpan; cx += cloudSpan) {
-        const cy = 72 + ((Math.abs(Math.floor((cx - cloudOffset) / cloudSpan)) * 37) % 60);
-        ctx.fillRect(cx, cy, 68, 16);
-        ctx.fillRect(cx + 12, cy - 10, 44, 10);
-        ctx.fillRect(cx + 220, cy + 28, 52, 14);
-        ctx.fillRect(cx + 230, cy + 18, 32, 10);
-      }
+      // --- 2. RENDER PARALLAX LAYERS ---
+      drawSkyAndCelestials(
+        ctx,
+        width,
+        height,
+        groundY,
+        cameraX,
+        frameCount,
+        theme,
+        currentWeather,
+        skyParticles
+      );
 
       // Layer 2: Distant Stepped Mountains (0.2x parallax)
       const mtnSpan = 360;
       const mtnOffset = -((cameraX * 0.2) % mtnSpan);
       for (let mx = mtnOffset - mtnSpan; mx < width + mtnSpan; mx += mtnSpan) {
-        ctx.fillStyle = '#cbd5e1';
+        ctx.fillStyle = theme.mountainFarColor;
         ctx.beginPath();
         ctx.moveTo(mx, groundY);
         ctx.lineTo(mx + 140, groundY - 190);
@@ -683,7 +709,7 @@ export const RpgBackgroundCanvas: React.FC<RpgBackgroundCanvasProps> = ({
         ctx.fill();
 
         // Snow cap
-        ctx.fillStyle = '#f8fafc';
+        ctx.fillStyle = theme.snowCapColor;
         ctx.beginPath();
         ctx.moveTo(mx + 140, groundY - 190);
         ctx.lineTo(mx + 106, groundY - 144);
@@ -692,7 +718,7 @@ export const RpgBackgroundCanvas: React.FC<RpgBackgroundCanvasProps> = ({
         ctx.fill();
 
         // Secondary peak
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = theme.mountainNearColor;
         ctx.beginPath();
         ctx.moveTo(mx + 160, groundY);
         ctx.lineTo(mx + 280, groundY - 140);
@@ -703,14 +729,18 @@ export const RpgBackgroundCanvas: React.FC<RpgBackgroundCanvasProps> = ({
 
       // Layer 3: Midground Pixel Pine Forest (0.45x parallax)
       const treeSpan = 96;
-      const treeOffset = -((cameraX * 0.45) % treeSpan);
-      for (let tx = treeOffset - treeSpan; tx < width + treeSpan; tx += treeSpan) {
-        const treeH = 74 + (Math.abs(Math.round((tx - treeOffset) / treeSpan)) % 3) * 16;
+      const treeScroll = cameraX * 0.45;
+      const firstTreeIdx = Math.floor(treeScroll / treeSpan) - 1;
+      const lastTreeIdx = Math.floor((treeScroll + width) / treeSpan) + 1;
+      for (let idx = firstTreeIdx; idx <= lastTreeIdx; idx++) {
+        const tx = idx * treeSpan - treeScroll;
+        const wrappedTreeIdx = ((idx % 3) + 3) % 3;
+        const treeH = 74 + wrappedTreeIdx * 16;
         // Trunk
-        ctx.fillStyle = '#78350f';
+        ctx.fillStyle = theme.treeTrunkColor;
         ctx.fillRect(tx + 26, groundY - 22, 8, 22);
         // Layered pixel foliage triangles
-        ctx.fillStyle = '#0f766e';
+        ctx.fillStyle = theme.treeFoliageColor;
         for (let tier = 0; tier < 3; tier++) {
           const tw = 44 - tier * 10;
           const ty = groundY - 18 - tier * (treeH * 0.28);
@@ -721,6 +751,15 @@ export const RpgBackgroundCanvas: React.FC<RpgBackgroundCanvasProps> = ({
           ctx.closePath();
           ctx.fill();
         }
+      }
+
+      // Subtle Ambient Atmospheric Wash (skip darkening clear night sky so moon stays luminous)
+      if (theme.ambientOverlayAlpha > 0.005 && currentWeather !== 'clear') {
+        ctx.save();
+        ctx.globalAlpha = theme.ambientOverlayAlpha;
+        ctx.fillStyle = theme.ambientOverlayColor;
+        ctx.fillRect(0, 0, width, groundY);
+        ctx.restore();
       }
 
       // --- 3. RENDER WORLD SPACE (1.0x camera) ---
@@ -885,10 +924,10 @@ export const RpgBackgroundCanvas: React.FC<RpgBackgroundCanvasProps> = ({
       ctx.restore(); // End world camera transform
 
       // --- 4. FOREGROUND TILED GRASS & EARTH ---
-      // Top emerald grass strip
-      ctx.fillStyle = '#10b981';
+      // Top emerald grass strip (reacts to day/dusk/night palette)
+      ctx.fillStyle = theme.grassTopColor;
       ctx.fillRect(0, groundY, width, 10);
-      ctx.fillStyle = '#059669';
+      ctx.fillStyle = theme.grassEdgeColor;
       ctx.fillRect(0, groundY + 10, width, 6);
 
       // Soil & Brick pattern below grass
@@ -902,6 +941,17 @@ export const RpgBackgroundCanvas: React.FC<RpgBackgroundCanvasProps> = ({
         ctx.fillRect(gx, groundY + 22, tileW - 4, 14);
         ctx.fillRect(gx + tileW / 2, groundY + 40, tileW - 4, 14);
       }
+
+      // --- 5. WEATHER PARTICLE OVERLAY ---
+      drawWeatherParticles(
+        ctx,
+        width,
+        groundY,
+        frameCount,
+        currentWeather,
+        currentStorm,
+        skyParticles
+      );
 
       ctx.restore();
       rafId = requestAnimationFrame(updateAndRender);

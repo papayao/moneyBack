@@ -4,7 +4,9 @@ import {
   calculateSalaryPerSecond,
   calculateDailyDebtCost,
   calculateTickerSnapshot,
+  calculateDebtPayoffView,
   generateTrendData,
+  isChinaWorkday,
   parseWechatBill,
   parseAlipayBill,
   UserProfile,
@@ -150,9 +152,14 @@ describe('SalaryTicker Engine', () => {
     expect(daily).toHaveLength(now.getDate());
     expect(daily[0].label).toBe(`${expectedMonthPrefix}-01`);
     expect(daily[daily.length - 1].debtProgress).toBeGreaterThan(0);
-    // 所有日期的应还负债均恒定有效，周末绝不为 0，且月内还贷进度单调不减
+    // 工作日应还负债 > 0，双休/法定节假日为 0，且月内月供覆盖率单调不减
     daily.forEach((point, idx) => {
-      expect(point.debtCost).toBeGreaterThan(0);
+      const pointDate = new Date(now.getFullYear(), now.getMonth(), idx + 1);
+      if (isChinaWorkday(pointDate)) {
+        expect(point.debtCost).toBeGreaterThan(0);
+      } else {
+        expect(point.debtCost).toBe(0);
+      }
       if (idx > 0) {
         expect(point.debtProgress).toBeGreaterThanOrEqual(daily[idx - 1].debtProgress);
       }
@@ -169,6 +176,43 @@ describe('SalaryTicker Engine', () => {
     expect(monthly[0].debtProgress).toBeGreaterThan(0);
   });
 
+  it('handles China workday calendar and custom overtime hourlyRate', () => {
+    // 2026-11-15 is Sunday (off-day): not working automatically, debtCost = 0
+    const sundayNoon = new Date(2026, 10, 15, 12, 0, 0);
+    const sundaySnap = calculateTickerSnapshot(mockProfile, mockLiabilities, sundayNoon);
+    expect(sundaySnap.isTodayWorkday).toBe(false);
+    expect(sundaySnap.todayScheduleKind).toBe('weekend');
+    expect(sundaySnap.isWorkingTime).toBe(false);
+    expect(sundaySnap.dailyDebtCost).toBe(0);
+    expect(sundaySnap.mainLaborEarnedToday).toBe(0);
+
+    // 2026-10-10 is Saturday makeup workday in 2026 holiday calendar
+    const makeupNoon = new Date(2026, 9, 10, 12, 0, 0);
+    const makeupSnap = calculateTickerSnapshot(mockProfile, mockLiabilities, makeupNoon);
+    expect(makeupSnap.isTodayWorkday).toBe(true);
+    expect(makeupSnap.todayScheduleKind).toBe('makeup_workday');
+    expect(makeupSnap.isWorkingTime).toBe(true);
+
+    // Custom overtime hourlyRate (e.g. ¥200/h for 1h elapsed)
+    const customOtProfile: UserProfile = {
+      ...mockProfile,
+      todayOvertime: {
+        date: '2026-11-13',
+        hours: 2,
+        rewardType: 'paid',
+        startSec: 18 * 3600,
+        hourlyRate: 200,
+      },
+    };
+    const otSnap = calculateTickerSnapshot(
+      customOtProfile,
+      mockLiabilities,
+      new Date(2026, 10, 13, 19, 0, 0)
+    );
+    expect(otSnap.overtimeHourlyRate).toBe(200);
+    expect(otSnap.overtimeEarnedToday).toBeCloseTo(200, 1);
+  });
+
   it('filters liabilities accurately by startDate', () => {
     const futureLiabilities: Liability[] = [
       {
@@ -182,7 +226,8 @@ describe('SalaryTicker Engine', () => {
         startDate: '2099-01-01',
       },
     ];
-    const futureDailyDebt = calculateDailyDebtCost(futureLiabilities, 20, new Date());
+    const workday = new Date(2026, 10, 13, 12, 0, 0); // Friday
+    const futureDailyDebt = calculateDailyDebtCost(futureLiabilities, 20, workday);
     expect(futureDailyDebt).toBe(0);
 
     const pastLiabilities: Liability[] = [
@@ -197,7 +242,7 @@ describe('SalaryTicker Engine', () => {
         startDate: '2020-01-01',
       },
     ];
-    const pastDailyDebt = calculateDailyDebtCost(pastLiabilities, 20, new Date());
+    const pastDailyDebt = calculateDailyDebtCost(pastLiabilities, 20, workday);
     expect(pastDailyDebt).toBe(100);
   });
 
@@ -239,6 +284,99 @@ describe('SalaryTicker Engine', () => {
     const staleSnap = calculateTickerSnapshot(staleProfile, mockLiabilities, evening);
     expect(staleSnap.isOvertimeActive).toBe(false);
     expect(staleSnap.overtimeEarnedToday).toBe(0);
+  });
+
+  it('includes cumulative career earnings from pastJobs and hireDate in debt payoff progress, plus total income & piggy bank toggles', () => {
+    // 2018-01-01 ~ 2019-12-31 (24 months * 4000 = 96,000)
+    // 2020-01-01 ~ 2021-12-31 (24 months * 5000 = 120,000)
+    // Current company from 2026-01-01 at 10,000/mo -> up to 2026-11-16 (10 full months = 100,000 + Nov partial)
+    const careerProfile: UserProfile = {
+      monthlySalary: 10000,
+      workDaysPerMonth: 21.75,
+      workStartTime: '09:00',
+      workEndTime: '18:00',
+      targetSavings: 100000,
+      currentSavings: 50000,
+      hireDate: '2026-01-01',
+      pastJobs: [
+        { id: 1, company: '第一家', startDate: '2018-01-01', endDate: '2019-12-31', monthlySalary: 4000 },
+        { id: 2, company: '第二家', startDate: '2020-01-01', endDate: '2021-12-31', monthlySalary: 5000 },
+      ],
+    };
+    const liabilities: Liability[] = [
+      {
+        id: 1,
+        type: 'mortgage',
+        title: '房贷',
+        totalAmount: 1000000,
+        remainingAmount: 1000000,
+        monthlyPayment: 4000,
+        repayDay: 15,
+        startDate: '2023-01-01',
+        status: 'active',
+      },
+    ];
+    const extraIncomes = [
+      {
+        id: 1,
+        title: '年终奖',
+        type: 'bonus' as const,
+        amount: 40000,
+        mode: 'one_time' as const,
+        status: 'received' as const,
+      },
+    ];
+
+    const now = new Date(2026, 10, 16, 12, 0, 0);
+    const snap = calculateTickerSnapshot(careerProfile, liabilities, now, [], extraIncomes);
+
+    expect(snap.careerStartDate).toBe('2018-01-01');
+    // At least 96,000 + 120,000 + 100,000 = 316,000 earned from Day 1
+    expect(snap.careerMainEarnings).toBeGreaterThan(316000);
+    expect(snap.totalDebtPaid).toBeGreaterThan(316000);
+    expect(snap.debtPayoffPercent).toBeGreaterThan(31);
+
+    const mainOnly = calculateDebtPayoffView(
+      snap,
+      careerProfile,
+      liabilities,
+      { useTotalIncome: false, includeSavings: false },
+      now
+    );
+    const withTotalIncome = calculateDebtPayoffView(
+      snap,
+      careerProfile,
+      liabilities,
+      { useTotalIncome: true, includeSavings: false },
+      now
+    );
+    const withTotalAndSavings = calculateDebtPayoffView(
+      snap,
+      careerProfile,
+      liabilities,
+      { useTotalIncome: true, includeSavings: true },
+      now
+    );
+
+    expect(withTotalIncome.totalDebtPaid).toBeGreaterThan(mainOnly.totalDebtPaid + 39000);
+    expect(withTotalAndSavings.savingsCovered).toBe(50000);
+    expect(withTotalAndSavings.totalDebtPaid).toBeCloseTo(withTotalIncome.totalDebtPaid + 50000, 1);
+    expect(withTotalAndSavings.savingsPercent).toBeGreaterThan(0);
+
+    // Past receivedDate one-time bonus stays included in careerAdditionalEarnings on later dates
+    const pastDatedBonus = [
+      {
+        id: 2,
+        title: '往日奖金',
+        type: 'bonus' as const,
+        amount: 600,
+        mode: 'one_time' as const,
+        status: 'active' as const,
+        receivedDate: '2026-11-12',
+      },
+    ];
+    const snapWithPastBonus = calculateTickerSnapshot(careerProfile, liabilities, now, [], pastDatedBonus);
+    expect(snapWithPastBonus.careerAdditionalEarnings).toBeGreaterThanOrEqual(600);
   });
 });
 

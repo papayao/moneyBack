@@ -1,5 +1,5 @@
 {
-  "name": "@salary-ticker/desktop",
+  "name": "@moneyback/desktop",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -12,17 +12,20 @@
     "electron:build": "vite build && electron-builder"
   },
   "dependencies": {
-    "@salary-ticker/core": "file:../core",
+    "@astryxdesign/core": "^0.7.16",
+    "@astryxdesign/theme-neutral": "^0.7.16",
+    "@moneyback/core": "file:../core",
+    "@stylexjs/stylex": "^0.19.2",
     "clsx": "^2.1.1",
     "framer-motion": "^14.11.1",
     "lucide-react": "^0.460.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "tailwind-merge": "^2.5.4"
   },
   "devDependencies": {
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.3.3",
     "autoprefixer": "^10.4.20",
     "electron": "^33.2.0",

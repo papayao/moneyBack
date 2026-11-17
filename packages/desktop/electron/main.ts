@@ -13,7 +13,7 @@ function createWindow() {
     minWidth: 400,
     minHeight: 300,
     backgroundColor: '#09090b',
-    title: 'SalaryTicker',
+    title: 'moneyBack',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -39,7 +39,7 @@ function createWindow() {
 function createTray() {
   const icon = nativeImage.createEmpty();
   tray = new Tray(icon);
-  tray.setToolTip('SalaryTicker - 打工人实时资产挂件');
+  tray.setToolTip('moneyBack - 打工人实时资产挂件');
 
   const contextMenu = Menu.buildFromTemplate([
     {

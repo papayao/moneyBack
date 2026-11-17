@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <view class="container" :class="{ 'landscape-mode': isLandscape }">
     <!-- Top Action Bar -->
     <view class="top-bar">
@@ -104,7 +104,7 @@
 <script>
 import {
   calculateTickerSnapshot,
-} from '@salary-ticker/core';
+} from '@moneyback/core';
 
 export default {
   data() {

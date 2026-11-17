@@ -1,8 +1,11 @@
+import type { DayScheduleKind } from './workday.js';
+
 export interface OvertimeRecord {
   date: string;       // "YYYY-MM-DD" 仅限当日有效，次日自动清零恢复默认作息
   hours: number;      // 申请通过的加班时长（小时）
   rewardType: 'paid' | 'comp_leave'; // 'paid': 有加班费 | 'comp_leave': 有调休
   startSec?: number;  // 当日开始加班时刻（自 00:00 起的秒数）
+  hourlyRate?: number; // 自定义加班时薪（元/时），未填则默认按当前主业等额时薪
 }
 
 export interface UserProfile {
@@ -83,6 +86,9 @@ export interface Transaction {
   tradeTime: string;
   remark?: string;
   isDebtPayment?: boolean;
+  isRefundOffset?: boolean; // 退款入账：不计入账单收入，冲销账单支出
+  originalType?: 'expense' | 'income' | 'repay'; // 手动切换不计收支前保留原类型
+  userOverrideType?: boolean; // 用户手动更改过收支口径时不被自动规则覆盖
 }
 
 export interface TickerSnapshot {
@@ -105,6 +111,7 @@ export interface TickerSnapshot {
   // Main labor earnings (工作日工薪独立核算)
   mainLaborEarnedToday: number;
   salaryPerHour: number;
+  nominalTotalHourlyRate: number; // 工作时段等效综合时薪（下班后不跌为仅剩被动时薪）
   // Custom Income Sources (多元收入: 配偶/房租/利息/副业)
   additionalIncomeMonthly: number;
   additionalIncomeToday: number;
@@ -114,16 +121,23 @@ export interface TickerSnapshot {
   oneTimeIncomes: IncomeSource[];
   // Lifetime totals
   totalLaborEarningsLive: number;
+  careerStartDate?: string;       // 最早入职日期 "YYYY-MM-DD"
+  careerMainEarnings: number;     // 从第一天上班至今主业累计所得（未设履历时等于今日主业）
+  careerAdditionalEarnings: number; // 累计多元额外收入 + 已到账一次性收入
   tenureDays: number;     // 入职以来自然日数（含今天），未设置入职日期为 0
   tenurePaidDays: number; // 入职以来计薪天数（周一至周五，含今天）
   totalExpensesLive: number; // 生活消费 + 负债支出
   totalLivingExpenses: number;
+  isTodayWorkday: boolean;
+  todayScheduleKind: DayScheduleKind;
+  todayHolidayName?: string;
   isWorkingTime: boolean;
   isBeforeWork: boolean;
   isAfterWork: boolean;
   isOvertimeActive: boolean;
   overtimeRewardType?: 'paid' | 'comp_leave';
   overtimeHoursToday: number;
+  overtimeHourlyRate?: number;
   overtimeEarnedToday: number;
   overtimeRemainingFormatted?: string;
   isLunchBreak: boolean;

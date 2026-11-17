@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { UserProfile, PastJob } from '@salary-ticker/core';
+import React, { useState, useEffect } from 'react';
+import { UserProfile, PastJob } from '@moneyback/core';
 import { X, Sliders, Plus, Trash2 } from 'lucide-react';
+import { AppDateInput, AppTimeInput } from './ui/AstryxDateTime';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -16,6 +17,15 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onSaveProfile,
 }) => {
   const [formData, setFormData] = useState<UserProfile>({ ...profile });
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        ...profile,
+        pastJobs: profile.pastJobs ? profile.pastJobs.map(j => ({ ...j })) : undefined,
+      });
+    }
+  }, [isOpen, profile]);
 
   if (!isOpen) return null;
 
@@ -66,22 +76,22 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <label className="block text-xs text-zinc-600 mb-1">上班时间</label>
-              <input
-                type="time"
+              <AppTimeInput
+                label="上班时间"
+                size="md"
                 value={formData.workStartTime}
-                onChange={e => setFormData({ ...formData, workStartTime: e.target.value })}
-                className="w-full bg-zinc-50 border border-zinc-300 text-xs text-zinc-900 rounded-sm px-2.5 py-2 font-mono focus:outline-none focus:border-zinc-500"
-                required
+                onChange={val => setFormData({ ...formData, workStartTime: val })}
+                isRequired
               />
             </div>
             <div>
               <label className="block text-xs text-zinc-600 mb-1">下班时间</label>
-              <input
-                type="time"
+              <AppTimeInput
+                label="下班时间"
+                size="md"
                 value={formData.workEndTime}
-                onChange={e => setFormData({ ...formData, workEndTime: e.target.value })}
-                className="w-full bg-zinc-50 border border-zinc-300 text-xs text-zinc-900 rounded-sm px-2.5 py-2 font-mono focus:outline-none focus:border-zinc-500"
-                required
+                onChange={val => setFormData({ ...formData, workEndTime: val })}
+                isRequired
               />
             </div>
           </div>
@@ -99,11 +109,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             </div>
             <div>
               <label className="block text-xs text-zinc-600 mb-1">入职日期</label>
-              <input
-                type="date"
+              <AppDateInput
+                label="入职日期"
+                size="md"
                 value={formData.hireDate ?? ''}
-                onChange={e => setFormData({ ...formData, hireDate: e.target.value || undefined })}
-                className="w-full bg-zinc-50 border border-zinc-300 text-xs text-zinc-900 rounded-sm px-2.5 py-2 font-mono focus:outline-none focus:border-zinc-500"
+                onChange={val => setFormData({ ...formData, hireDate: val || undefined })}
+                hasClear
               />
             </div>
           </div>
@@ -136,10 +147,22 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 });
               const cls = 'bg-zinc-50 border border-zinc-300 text-xs text-zinc-900 rounded-sm px-2 py-1.5 font-mono min-w-0';
               return (
-                <div key={job.id} className="grid grid-cols-[1fr_1fr_1fr_5rem_auto] gap-1.5 items-center">
+                <div key={job.id} className="grid grid-cols-1 sm:grid-cols-[1fr_8.25rem_8.25rem_4.5rem_auto] gap-1.5 items-center">
                   <input className={cls} placeholder="公司" value={job.company} onChange={e => update({ company: e.target.value })} required />
-                  <input className={cls} type="date" title="入职" value={job.startDate} onChange={e => update({ startDate: e.target.value })} required />
-                  <input className={cls} type="date" title="离职" value={job.endDate} onChange={e => update({ endDate: e.target.value })} required />
+                  <AppDateInput
+                    label="入职日期"
+                    value={job.startDate}
+                    onChange={val => update({ startDate: val })}
+                    placeholder="入职日期"
+                    isRequired
+                  />
+                  <AppDateInput
+                    label="离职日期"
+                    value={job.endDate}
+                    onChange={val => update({ endDate: val })}
+                    placeholder="离职日期"
+                    isRequired
+                  />
                   <input className={cls} type="number" placeholder="月薪" value={job.monthlySalary || ''} onChange={e => update({ monthlySalary: parseFloat(e.target.value) || 0 })} required />
                   <button
                     type="button"

@@ -1,6 +1,6 @@
-# Salary Ticker · 实时薪资与还贷计价器
+# moneyBack · 实时薪资与还贷计价器
 
-> 把你的每一秒工作时间换算成看得见的现金流：实时秒级跳表、下班自动停表与无偿加班反 PUA 拦截、多元现金流拆分、负债进度追踪，以及摸鱼/专注可用的 2D 像素 RPG 挂机模式。
+> 把你的每一秒工作时间换算成看得见的现金流：实时秒级跳表、下班自动停表与无偿加班反 PUA 拦截、多元现金流拆分、账单收支自动联动、动态时间天色与天气背景，以及 2D 像素 RPG 挂机模式。
 
 ---
 
@@ -21,39 +21,42 @@
    > **「啥都没有，加个鸡毛，下班！需要我告诉你劳动局电话号码吗？」**
 4. 仅当有加班费或调休时才恢复当日加班计时（次日自动重置回默认作息）。
 
-### 3. 2D 像素 RPG 专注模式 & 3D 金猪存钱罐
+### 3. 动态时间天色与实时天气背景
+- **五时段太阳/月亮轨迹**：按本地时钟连续插值晨曦日出、正午晴空、下午微降、傍晚余晖与夜晚繁星弯月，同时覆盖默认主看板底层与专注模式画布。
+- **免费天气联动**：接入免 Key 的 Open-Meteo 实时天气与城市搜索（本地缓存 30 分钟，离线自动兜底），支持晴、多云、雨、雷暴闪电与降雪粒子效果，可在顶部天气胶囊切换城市或手动预览任意时段/天气。
+
+### 4. 2D 像素 RPG 专注模式 & 3D 金猪存钱罐
 - **专注模式**（`FocusView` + `RpgBackgroundCanvas`）：严格锁定展示今日主业净收入，自带 2D 横版像素 RPG 冒险背景（默认自动巡逻打史莱姆/哥布林/开宝箱挂机；点击背景即可缩放 HUD 并使用 `A/D`、`W/Space`、`J`、`K` 亲自上手操作，`Esc` 退回挂机）。
 - **金猪存钱罐**（`PiggyBankWidget`）：右下角 Canvas 2D 手绘 3/4 视角金猪挂件，支持快捷存钱与旋转金币入槽物理动画。
 
-### 4. 负债管理与动态还贷趋势图
-- **负债起始日期与每日平账**：支持房贷、车贷、信用卡等负债配置 `startDate`；当今日已赚覆盖「今日负债」时自动划线并标注 `已还清`。
-- **多维度收支与还贷趋势**（`TrendChartCard`）：
-  - **时间维度**：`小时`（今日时段 / 今日应还负债）、`天`（本月 1 号至今日 / 当月总月供）、`月`（1~12 月 / 全年应还负债）。
-  - **口径联动**：标题、收入曲线与还贷百分比自动随顶部「主要收入 / 总收入」切换。
+### 5. 账单导入联动分析与还贷趋势图
+- **微信/支付宝账单解析 & 拖拽导入**：支持拖入或选择微信（`.xlsx` / `.csv`）及支付宝（`.csv`，自动适配 GBK/UTF-8 与混合换行符）账单明细，自动去重。
+- **主要收入自动对齐**（`BillAnalysisCard`）：按账单覆盖的工作日自动关联同期主要收入与同期负债均摊，展示账单期净结余、储蓄率、Top 4 支出分类，并支持「全部 / 近7天 / 近30天 / 本月 / 上月 / 自定义日期」时间筛选。
+- **多维度收支与还贷趋势**（`TrendChartCard`）：支持 `小时`、`天`、`月` 维度，按交易真实日期精准归集消费与负债，随顶部「主要收入 / 总收入」联动。
 
-### 5. 实用工具
-- **账单导入**：支持解析微信支付 / 支付宝导出的 CSV 账单明细（`packages/core/src/parsers`）。
+### 6. 统一中文表单与实用工具
+- **Astryx 中文日期/时间输入**：基于 React 19 与 `@astryxdesign/core`（`zh-CN` 本地化 + `neutralTheme`）统一封装日期日历弹层与 24 小时制时间输入。
 - **防窥模式 & 迷你悬浮窗**：顶部一键隐藏敏感金额，或切换至精简悬浮窗。
-- **纯本地存储**：财务数据仅保存在本地 `localStorage`（`salary_ticker_*`），无后端上传。
+- **纯本地存储**：财务数据仅保存在本地 `localStorage`，无后端上传。
 
 ---
 
 ## 目录结构
 
 ```text
-salary-ticker/
+moneyBack/
 ├── package.json                  # Monorepo 工作区配置 (npm workspaces)
 └── packages/
-    ├── core/                     # 核心计薪引擎、趋势计算、账单解析 & Vitest 单测
+    ├── core/                     # 核心计薪引擎、趋势计算、账单联动分析、解析器 & Vitest 单测
     │   ├── src/
     │   │   ├── engine.ts         # 秒级快照、主业/额外/一次性收入、加班与负债核算
     │   │   ├── trend.ts          # 小时/天/月收支与还贷进度生成
+    │   │   ├── billAnalysis.ts   # 账单周期对齐主要收入、时间筛选与分类统计
     │   │   ├── types.ts          # 核心类型定义
     │   │   └── parsers/          # 微信/支付宝账单解析器
-    │   └── test/
-    │       └── engine.test.ts    # 核心算法单元测试
-    ├── desktop/                  # React 18 + Tailwind + Vite + Electron 桌面/Web 端
-    │   └── src/components/       # TickerWidget / FocusView / PiggyBankWidget / TrendChartCard 等
+    │   └── test/                 # 核心算法、账单解析与联动单测
+    ├── desktop/                  # React 19 + Tailwind + Astryx + Vite + Electron 桌面/Web 端
+    │   └── src/components/       # TickerWidget / FocusView / BillAnalysisCard / DynamicSkyBackdrop 等
     └── mobile/                   # Uni-app (Vue 3) 移动端骨架
 ```
 
@@ -64,13 +67,13 @@ salary-ticker/
 > 环境要求：Node.js 18+、npm 9+
 
 ```bash
-# 1. 安装依赖（在 salary-ticker 目录执行）
+# 1. 安装依赖（在项目根目录执行）
 npm install
 
 # 2. 启动前端 / 桌面预览开发服务器
 npm run dev --workspace=packages/desktop
 
-# 3. 运行核心引擎单元测试 (Vitest)
+# 3. 运行核心引擎与前端单元测试 (Vitest)
 npm test
 
 # 4. 构建桌面前端产物 (tsc && vite build)

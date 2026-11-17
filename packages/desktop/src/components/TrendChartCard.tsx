@@ -5,9 +5,10 @@ import {
   IncomeSource,
   Transaction,
   TrendGranularity,
+  HolidayCalendarMap,
   generateTrendData,
   TrendPoint,
-} from '@salary-ticker/core';
+} from '@moneyback/core';
 import { LineChart as ChartIcon } from 'lucide-react';
 
 interface TrendChartCardProps {
@@ -17,6 +18,7 @@ interface TrendChartCardProps {
   transactions: Transaction[];
   isPrivacyMode: boolean;
   incomeDisplayMode?: 'main' | 'total';
+  holidayCalendar?: HolidayCalendarMap;
 }
 
 export const TrendChartCard: React.FC<TrendChartCardProps> = ({
@@ -26,6 +28,7 @@ export const TrendChartCard: React.FC<TrendChartCardProps> = ({
   transactions,
   isPrivacyMode,
   incomeDisplayMode = 'main',
+  holidayCalendar,
 }) => {
   const [granularity, setGranularity] = useState<TrendGranularity>('daily');
   const [viewMode, setViewMode] = useState<'amount' | 'progress'>('amount');
@@ -43,9 +46,18 @@ export const TrendChartCard: React.FC<TrendChartCardProps> = ({
       liabilities,
       incomeSources,
       transactions,
-      incomeDisplayMode
+      incomeDisplayMode,
+      holidayCalendar
     );
-  }, [granularity, profile, liabilities, incomeSources, transactions, incomeDisplayMode]);
+  }, [
+    granularity,
+    profile,
+    liabilities,
+    incomeSources,
+    transactions,
+    incomeDisplayMode,
+    holidayCalendar,
+  ]);
 
   // Chart dimensions
   const svgWidth = 600;
@@ -129,15 +141,12 @@ export const TrendChartCard: React.FC<TrendChartCardProps> = ({
   const hoveredPoint = hoverIndex !== null ? pointsWithCoords[hoverIndex] : null;
 
   return (
-    <div className="border border-zinc-200/90 bg-white p-4 rounded-md shadow-2xs space-y-3">
-      {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-zinc-100">
-        <div className="flex items-center gap-2">
-          <ChartIcon className="w-4 h-4 text-zinc-700" />
-          <h3 className="text-sm font-semibold text-zinc-900">
-            {incomeDisplayMode === 'main' ? '主要收支与还贷趋势' : '综合收支与还贷趋势'}
-          </h3>
-        </div>
+    <div className="space-y-3">
+      {/* Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <span className="text-[11px] text-zinc-500">
+          {incomeDisplayMode === 'main' ? '仅统计主业工薪与还贷对比' : '包含多元收入与还贷对比'}
+        </span>
 
         {/* Granularity & Mode Selectors */}
         <div className="flex items-center gap-2">
@@ -161,7 +170,7 @@ export const TrendChartCard: React.FC<TrendChartCardProps> = ({
                   : 'text-zinc-600 hover:text-zinc-900'
               }`}
             >
-              还贷进度 (%)
+              月供覆盖率 (%)
             </button>
           </div>
 
@@ -248,10 +257,10 @@ export const TrendChartCard: React.FC<TrendChartCardProps> = ({
                   ? '日均应还负债 (¥)'
                   : '月供负债 (¥)'
               : granularity === 'hourly'
-                ? '今日还贷进度 (%)'
+                ? '今日月供覆盖率 (%)'
                 : granularity === 'daily'
-                  ? '当月还贷进度 (%)'
-                  : '全年还贷进度 (%)'}
+                  ? '当月月供覆盖率 (%)'
+                  : '全年月供覆盖率 (%)'}
           </span>
         </button>
       </div>
@@ -269,7 +278,9 @@ export const TrendChartCard: React.FC<TrendChartCardProps> = ({
             const pctVal = minPct + (maxPct - minPct) * pct;
             const valLabel =
               viewMode === 'amount'
-                ? `¥${Math.round(maxAmount * pct).toLocaleString()}`
+                ? isPrivacyMode
+                  ? '****'
+                  : `¥${Math.round(maxAmount * pct).toLocaleString()}`
                 : `${pctVal.toFixed(maxPct - minPct < 5 ? 2 : 1)}%`;
 
             return (
@@ -420,12 +431,18 @@ export const TrendChartCard: React.FC<TrendChartCardProps> = ({
               <span>{incomeDisplayMode === 'main' ? '主要工薪:' : '总收入:'}</span>
               <span>{formatMoney(hoveredPoint.income)}</span>
             </div>
-            <div className="flex items-center justify-between gap-4 text-rose-400">
+            {viewMode === 'amount' && (
+              <div className="flex items-center justify-between gap-4 text-rose-400">
+                <span>综合支出(含负债):</span>
+                <span>{formatMoney(hoveredPoint.expense)}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-4 text-amber-300">
               <span>应还负债:</span>
               <span>{formatMoney(hoveredPoint.debtCost)}</span>
             </div>
-            <div className="flex items-center justify-between gap-4 text-amber-300">
-              <span>还贷进度:</span>
+            <div className="flex items-center justify-between gap-4 text-zinc-200">
+              <span>当期月供覆盖率:</span>
               <span>{hoveredPoint.debtProgress}% (剩余: {formatMoney(hoveredPoint.remainingDebt)})</span>
             </div>
           </div>
@@ -449,7 +466,7 @@ export const TrendChartCard: React.FC<TrendChartCardProps> = ({
           </div>
         </div>
         <div className="p-2 bg-zinc-50 border border-zinc-200 rounded-sm">
-          <div className="text-zinc-400">最新还贷进度</div>
+          <div className="text-zinc-400">最新月供覆盖率</div>
           <div className="font-semibold font-mono text-amber-700 text-xs">
             {data[data.length - 1]?.debtProgress ?? 0}%
           </div>

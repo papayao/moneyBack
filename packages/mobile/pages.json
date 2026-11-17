@@ -30,7 +30,7 @@
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "SalaryTicker",
+    "navigationBarTitleText": "moneyBack",
     "navigationBarBackgroundColor": "#ffffff",
     "backgroundColor": "#f4f4f5"
   },

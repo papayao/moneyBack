@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TickerSnapshot, UserProfile, IncomeSource } from '@salary-ticker/core';
+import { TickerSnapshot, UserProfile, IncomeSource } from '@moneyback/core';
 import {
   TrendingDown,
   TrendingUp,
@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { RollingNumber } from './RollingNumber';
 import { BackgroundBeamsWithCollision } from './ui/background-beams-with-collision';
+import { AppTimeInput } from './ui/AstryxDateTime';
 
 interface TickerWidgetProps {
   snapshot: TickerSnapshot;
@@ -110,6 +111,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
   const [showOvertimeModal, setShowOvertimeModal] = useState(false);
   const [overtimeStep, setOvertimeStep] = useState<OvertimeStep>('form');
   const [overtimeHoursInput, setOvertimeHoursInput] = useState('2');
+  const [overtimeRateInput, setOvertimeRateInput] = useState('');
   const [roastIdx, setRoastIdx] = useState(0);
 
   const OVERTIME_ROASTS = [
@@ -120,7 +122,14 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
   ];
 
   const parsedOvertimeHours = Math.max(0, parseFloat(overtimeHoursInput) || 0);
-  const estimatedOvertimePay = parsedOvertimeHours * snapshot.salaryPerHour;
+  const parsedCustomOvertimeRate = parseFloat(overtimeRateInput);
+  const effectiveOvertimeRate =
+    overtimeRateInput.trim() !== '' &&
+    Number.isFinite(parsedCustomOvertimeRate) &&
+    parsedCustomOvertimeRate >= 0
+      ? parsedCustomOvertimeRate
+      : snapshot.salaryPerHour;
+  const estimatedOvertimePay = parsedOvertimeHours * effectiveOvertimeRate;
 
   const handleConfirmOvertime = (rewardType: 'paid' | 'comp_leave') => {
     if (!onUpdateProfile || parsedOvertimeHours <= 0) return;
@@ -128,6 +137,13 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    const customHourlyRate =
+      rewardType === 'paid' &&
+      overtimeRateInput.trim() !== '' &&
+      Number.isFinite(parsedCustomOvertimeRate) &&
+      parsedCustomOvertimeRate >= 0
+        ? parsedCustomOvertimeRate
+        : undefined;
 
     const prev = profile.todayOvertime;
     const canExtend =
@@ -144,17 +160,27 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
             hours: Math.round((prev.hours + parsedOvertimeHours) * 100) / 100,
             rewardType,
             startSec: prev.startSec,
+            hourlyRate: customHourlyRate ?? prev.hourlyRate,
           }
         : {
             date: todayStr,
             hours: parsedOvertimeHours,
             rewardType,
             startSec: currentSeconds,
+            hourlyRate: customHourlyRate,
           },
     });
 
     setShowOvertimeModal(false);
     setOvertimeStep('form');
+  };
+
+  const handleStopOvertime = () => {
+    if (!onUpdateProfile) return;
+    onUpdateProfile({
+      ...profile,
+      todayOvertime: undefined,
+    });
   };
 
   const handleSaveEarnings = () => {
@@ -191,7 +217,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
   const currentHourlyRate =
     incomeDisplayMode === 'main'
       ? snapshot.salaryPerHour
-      : Number((snapshot.totalIncomePerSecond * 3600).toFixed(1));
+      : snapshot.nominalTotalHourlyRate;
 
   const currentPerSecondRate =
     incomeDisplayMode === 'main'
@@ -211,7 +237,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
   return (
     <div className="space-y-4">
       {/* Main Live Net Ticker Card with Collision Beams & Separated Main Salary vs Passive Flows */}
-      <BackgroundBeamsWithCollision isPositive={isCurrentPositive} className="p-5 md:p-6">
+      <BackgroundBeamsWithCollision isPositive={isCurrentPositive} bordered={false} className="p-2 md:p-3">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full items-start">
           {/* Main Column: Hero Net Ticker & Salary Block (在主要收入模式下独占全宽，界面极为干净) */}
           <div className={`${incomeDisplayMode === 'main' ? 'lg:col-span-12 space-y-4' : 'lg:col-span-6 flex flex-col justify-between space-y-4'}`}>
@@ -245,7 +271,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
 
                 <div className="flex items-center gap-2.5">
                   <span className="font-mono text-zinc-500">
-                    ¥{currentHourlyRate}/时
+                    {isPrivacyMode ? '****' : `¥${currentHourlyRate}/时`}
                   </span>
                   {onToggleFocus && (
                     <button
@@ -282,7 +308,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
 
             {/* Income Unit Card (主要工薪 vs 全部收入) */}
             <div className="bg-white/90 border border-zinc-200/90 rounded-sm p-3 space-y-2">
-              <div className="flex items-center justify-between text-[11px] pb-1.5 border-b border-zinc-100">
+              <div className="flex items-center justify-between text-[11px]">
                 <div className="flex items-center gap-1.5 font-semibold text-zinc-900">
                   <Briefcase className="w-3.5 h-3.5 text-zinc-700" />
                   <span>{incomeDisplayMode === 'main' ? '主要收入' : '总收入'}</span>
@@ -295,11 +321,13 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-xs text-zinc-500">
-                    时薪 <strong className="text-zinc-800 font-mono">¥{currentHourlyRate}</strong>
-                    <span className="text-zinc-400 text-[10px] ml-1">(+¥{currentPerSecondRate.toFixed(3)}/秒)</span>
+                    时薪 <strong className="text-zinc-800 font-mono">{isPrivacyMode ? '****' : `¥${currentHourlyRate}`}</strong>
+                    <span className="text-zinc-400 text-[10px] ml-1">
+                      {isPrivacyMode ? '(****/秒)' : `(+¥${currentPerSecondRate.toFixed(3)}/秒)`}
+                    </span>
                   </div>
                   <div className="text-[11px] text-zinc-400 mt-0.5">
-                    月入: ¥{Math.round(currentMonthlyIncome).toLocaleString()}
+                    月入: {isPrivacyMode ? '****' : `¥${Math.round(currentMonthlyIncome).toLocaleString()}`}
                   </div>
                 </div>
 
@@ -357,6 +385,11 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                     <RollingNumber value={formatMoney(currentTodayEarned)} />
                   </div>
                   <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                    {snapshot.todayScheduleKind === 'makeup_workday' && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-amber-50 text-amber-700 border border-amber-200 font-sans">
+                        调休补班
+                      </span>
+                    )}
                     <span
                       className={`text-[10px] px-1.5 py-0.5 rounded-sm inline-block font-sans ${
                         snapshot.isOvertimeActive
@@ -372,16 +405,25 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                           : `调休加班中 ${snapshot.overtimeRemainingFormatted ?? ''}`
                         : snapshot.isWorkingTime
                           ? '工作中'
-                          : snapshot.isBeforeWork
-                            ? '未上班'
-                            : '已下班'}
+                          : !snapshot.isTodayWorkday
+                            ? snapshot.todayScheduleKind === 'holiday'
+                              ? `${snapshot.todayHolidayName || '节假日'}放假`
+                              : '周末休息'
+                            : snapshot.isBeforeWork
+                              ? '未上班'
+                              : '已下班'}
                     </span>
 
-                    {snapshot.isAfterWork && onUpdateProfile && (
+                    {(snapshot.isAfterWork || !snapshot.isTodayWorkday) && onUpdateProfile && (
                       <button
                         type="button"
                         onClick={() => {
                           setOvertimeHoursInput('2');
+                          setOvertimeRateInput(
+                            profile.todayOvertime?.hourlyRate !== undefined
+                              ? String(profile.todayOvertime.hourlyRate)
+                              : ''
+                          );
                           setOvertimeStep('form');
                           setShowOvertimeModal(true);
                         }}
@@ -392,13 +434,24 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                         <span>{snapshot.isOvertimeActive ? '续加' : '加班'}</span>
                       </button>
                     )}
+
+                    {snapshot.isOvertimeActive && onUpdateProfile && (
+                      <button
+                        type="button"
+                        onClick={handleStopOvertime}
+                        className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium text-rose-600 hover:text-rose-700 bg-white hover:bg-rose-50 border border-rose-200 rounded-sm transition cursor-pointer"
+                        title="提前结束今日加班计时"
+                      >
+                        结束
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Today's Net Balance Breakdown */}
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-zinc-100 text-xs">
+            <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
               <div className="flex items-start gap-2.5 p-2 bg-zinc-50/70 rounded-sm border border-zinc-200/60">
                 <TrendingUp className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                 <div className="flex flex-col">
@@ -453,7 +506,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
           {incomeDisplayMode === 'total' && (
             <div className="lg:col-span-6 bg-zinc-50/90 border border-zinc-200/90 rounded-sm p-3 space-y-2.5 flex flex-col justify-between">
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs border-b border-zinc-200/60 pb-1.5">
+                <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-zinc-800">额外收入</span>
                     <div className="flex bg-zinc-200/70 p-0.5 rounded-xs text-[10px]">
@@ -519,17 +572,19 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                               </span>
                             </div>
                             <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
-                              今日已入: <strong className="text-zinc-600">+¥{item.todayEarned.toFixed(2)}</strong>
+                              今日已入: <strong className="text-zinc-600">{isPrivacyMode ? '****' : `+¥${item.todayEarned.toFixed(2)}`}</strong>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0">
                             <div className="text-right">
                               <span className="text-emerald-700 font-semibold text-xs font-mono">
-                                +¥{item.ratePerSecond.toFixed(4)}
+                                {isPrivacyMode ? '****' : `+¥${item.ratePerSecond.toFixed(4)}`}
                               </span>
                               <span className="text-[10px] text-zinc-400 block font-sans">
-                                /秒 · ¥{item.amount.toLocaleString()}/{item.frequency === 'annual' ? '年' : '月'}
+                                {isPrivacyMode
+                                  ? `/秒 · ****/${item.frequency === 'annual' ? '年' : '月'}`
+                                  : `/秒 · ¥${item.amount.toLocaleString()}/${item.frequency === 'annual' ? '年' : '月'}`}
                               </span>
                             </div>
                             {onRemoveIncomeSource && (
@@ -581,7 +636,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                                 </span>
                               </div>
                               <div className="text-xs font-mono font-semibold text-emerald-700 mt-0.5">
-                                +¥{item.amount.toLocaleString()}
+                                {isPrivacyMode ? '****' : `+¥${item.amount.toLocaleString()}`}
                               </div>
                             </div>
 
@@ -608,7 +663,7 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
               <div className="flex items-center justify-between text-[11px] bg-white p-2 rounded-sm border border-zinc-200/70 text-zinc-600">
                 <span>今日额外收入合计 (流式 + 今日一次性):</span>
                 <span className="font-semibold font-mono text-emerald-700">
-                  +¥{snapshot.additionalIncomeToday.toFixed(2)}
+                  {isPrivacyMode ? '****' : `+¥${snapshot.additionalIncomeToday.toFixed(2)}`}
                 </span>
               </div>
             </div>
@@ -740,20 +795,18 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                     </div>
                     <div>
                       <label className="block text-[11px] text-zinc-500 mb-0.5">上班时间</label>
-                      <input
-                        type="time"
+                      <AppTimeInput
+                        label="上班时间"
                         value={newWorkStartTime}
-                        onChange={e => setNewWorkStartTime(e.target.value)}
-                        className="w-full bg-white border border-zinc-300 rounded-sm px-2 py-1 text-xs text-zinc-900 font-mono focus:outline-none focus:border-zinc-500"
+                        onChange={setNewWorkStartTime}
                       />
                     </div>
                     <div>
                       <label className="block text-[11px] text-zinc-500 mb-0.5">下班时间</label>
-                      <input
-                        type="time"
+                      <AppTimeInput
+                        label="下班时间"
                         value={newWorkEndTime}
-                        onChange={e => setNewWorkEndTime(e.target.value)}
-                        className="w-full bg-white border border-zinc-300 rounded-sm px-2 py-1 text-xs text-zinc-900 font-mono focus:outline-none focus:border-zinc-500"
+                        onChange={setNewWorkEndTime}
                       />
                     </div>
                   </div>
@@ -849,11 +902,26 @@ export const TickerWidget: React.FC<TickerWidgetProps> = ({
                   </div>
                 </div>
 
+                <div>
+                  <label className="block text-xs text-zinc-600 mb-1">
+                    加班时薪（元/时，选填）
+                  </label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    value={overtimeRateInput}
+                    onChange={e => setOvertimeRateInput(e.target.value)}
+                    placeholder={`留空默认等额时薪 ¥${snapshot.salaryPerHour}/时`}
+                    className="w-full bg-zinc-50 border border-zinc-300 rounded-sm px-2.5 py-1.5 text-xs font-mono text-zinc-900 focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
+
                 <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-sm flex items-center justify-between">
                   <div>
                     <div className="text-[11px] text-zinc-500">预计收益</div>
                     <div className="text-[10px] text-zinc-400 font-mono">
-                      ¥{snapshot.salaryPerHour}/时 × {parsedOvertimeHours}h
+                      ¥{effectiveOvertimeRate}/时 × {parsedOvertimeHours}h
                     </div>
                   </div>
                   <div className="text-base font-bold font-mono text-emerald-700">

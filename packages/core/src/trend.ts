@@ -4,6 +4,17 @@ import {
   calculateAdditionalMonthlyIncome,
   calculateTickerSnapshot,
 } from './engine.js';
+import {
+  extractTxDateKey,
+  extractTxHourFloat,
+  normalizeBillTransaction,
+} from './billAnalysis.js';
+import {
+  BUILTIN_CHINA_HOLIDAYS,
+  HolidayCalendarMap,
+  formatLocalYMD,
+  isChinaWorkday,
+} from './workday.js';
 
 export type TrendGranularity = 'hourly' | 'daily' | 'monthly';
 
@@ -12,7 +23,7 @@ export interface TrendPoint {
   income: number;          // 周期收入 (¥)
   expense: number;         // 周期总支出 (¥，负债 + 账单消费)
   debtCost: number;        // 周期应还负债分母 (¥)
-  debtProgress: number;    // 周期负债清偿进度 (0 - 100%)
+  debtProgress: number;    // 周期月供覆盖率 (0 - 100%)
   savingsProgress: number; // 存钱达成进度 (保留字段兼容)
   remainingDebt: number;   // 周期剩余待平负债 (¥)
   currentSavings: number;  // 当前存款结余 (¥)
@@ -24,16 +35,11 @@ export function generateTrendData(
   liabilities: Liability[],
   incomeSources: IncomeSource[] = [],
   transactions: Transaction[] = [],
-  incomeMode: 'main' | 'total' = 'main'
+  incomeMode: 'main' | 'total' = 'main',
+  holidayCalendar: HolidayCalendarMap = BUILTIN_CHINA_HOLIDAYS,
+  now: Date = new Date()
 ): TrendPoint[] {
-  const now = new Date();
-  const nowStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const activeLiabilities = liabilities.filter(l => {
-    if ((l.status ?? 'active') !== 'active') return false;
-    if (l.startDate && l.startDate > nowStr) return false;
-    return true;
-  });
-  const monthlyDebt = activeLiabilities.reduce((acc, curr) => acc + curr.monthlyPayment, 0);
+  const nowStr = formatLocalYMD(now);
 
   const monthlyAdditional = calculateAdditionalMonthlyIncome(incomeSources);
   const monthlySalary = profile.monthlySalary;
@@ -41,22 +47,67 @@ export function generateTrendData(
     incomeMode === 'main' ? monthlySalary : monthlySalary + monthlyAdditional;
 
   const workDays = profile.workDaysPerMonth > 0 ? profile.workDaysPerMonth : 21.75;
+
+  // 拆开工薪类流式额外收入(仅工作日) vs 24/7 被动收入(自然日) vs 一次性奖金(按日期)
+  let scheduledAdditionalMonthly = 0;
+  let passiveAdditionalMonthly = 0;
+  for (const s of incomeSources) {
+    if ((s.status ?? 'active') !== 'active' || (s.mode ?? 'streaming') !== 'streaming') continue;
+    const monthly = s.frequency === 'annual' ? (s.amount || 0) / 12 : (s.amount || 0);
+    const isScheduled = s.type === 'partner' || Boolean(s.workStartTime && s.workEndTime);
+    if (isScheduled) scheduledAdditionalMonthly += monthly;
+    else passiveAdditionalMonthly += monthly;
+  }
+
+  const oneTimeByDate = new Map<string, number>();
+  const oneTimeByMonth = new Map<string, number>();
+  for (const s of incomeSources) {
+    if (s.mode !== 'one_time' || !s.receivedDate) continue;
+    oneTimeByDate.set(s.receivedDate, (oneTimeByDate.get(s.receivedDate) ?? 0) + (s.amount || 0));
+    const mKey = s.receivedDate.slice(0, 7);
+    oneTimeByMonth.set(mKey, (oneTimeByMonth.get(mKey) ?? 0) + (s.amount || 0));
+  }
+
   const dailyMainIncome = monthlySalary / workDays;
-  const dailyTotalIncome = (monthlySalary + monthlyAdditional) / workDays;
-  const effectiveDailyWorkIncome = incomeMode === 'main' ? dailyMainIncome : dailyTotalIncome;
+  const dailyScheduledAdditional = scheduledAdditionalMonthly / workDays;
+  const dailyPassiveAdditional = passiveAdditionalMonthly / 30;
 
-  const dailyDebt = calculateDailyDebtCost(liabilities, workDays, now);
+  const dailyDebt = calculateDailyDebtCost(liabilities, workDays, now, holidayCalendar);
 
-  // Actual recorded living expense from imported transactions
-  const txTotalExpense = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+  // 按真实交易日期与月份聚合导入账单的日常消费（自转不计支出、退款自动冲销）
+  const txExpenseByDay = new Map<string, number>();
+  const txExpenseByMonth = new Map<string, number>();
+  const todayExpenseTxs: Array<{ hour: number; amount: number }> = [];
 
-  const liveSnap = calculateTickerSnapshot(profile, liabilities, now, transactions, incomeSources);
+  for (const rawTx of transactions) {
+    const tx = normalizeBillTransaction(rawTx);
+    const isExp = tx.type === 'expense' && !tx.isRefundOffset;
+    const isRef = Boolean(tx.isRefundOffset);
+    if (!isExp && !isRef) continue;
+    const dateKey = extractTxDateKey(tx.tradeTime);
+    if (!dateKey) continue;
+    const delta = isExp ? tx.amount : -tx.amount;
+    txExpenseByDay.set(dateKey, Math.max(0, (txExpenseByDay.get(dateKey) ?? 0) + delta));
+    const monthKey = dateKey.slice(0, 7);
+    txExpenseByMonth.set(monthKey, Math.max(0, (txExpenseByMonth.get(monthKey) ?? 0) + delta));
+    if (dateKey === nowStr) {
+      const hour = extractTxHourFloat(tx.tradeTime) ?? 12;
+      todayExpenseTxs.push({ hour, amount: delta });
+    }
+  }
+
+  const liveSnap = calculateTickerSnapshot(
+    profile,
+    liabilities,
+    now,
+    transactions,
+    incomeSources,
+    holidayCalendar
+  );
   const liveTodayEarned =
     incomeMode === 'main' ? liveSnap.mainLaborEarnedToday : liveSnap.earnedToday;
 
-  // 1. 小时维度：分母 = 今日应还负债 (dailyDebt)，分子 = 截至该小时今日已赚 (主要收入 or 总收入)
+  // 1. 小时维度：分母 = 今日应还负债 (dailyDebt，休息日为 0)，分子 = 截至该小时今日已赚
   if (granularity === 'hourly') {
     const timeSlots = [
       { h: 9, m: 0, label: '09:00' },
@@ -83,11 +134,19 @@ export function generateTrendData(
         liabilities,
         pointDate,
         transactions,
-        incomeSources
+        incomeSources,
+        holidayCalendar
       );
 
       const slotEarned =
         incomeMode === 'main' ? snap.mainLaborEarnedToday : snap.earnedToday;
+      const slotHour = slot.h + slot.m / 60;
+      const todayBillSpentUpToSlot = Math.max(
+        0,
+        todayExpenseTxs
+          .filter(t => t.hour <= slotHour)
+          .reduce((sum, t) => sum + t.amount, 0)
+      );
       const dProgress =
         dailyDebt > 0
           ? Math.round(Math.min(100, (slotEarned / dailyDebt) * 100) * 10) / 10
@@ -97,7 +156,7 @@ export function generateTrendData(
       return {
         label: slot.label,
         income: Math.round(slotEarned * 100) / 100,
-        expense: Math.round(dailyDebt * 100) / 100,
+        expense: Math.round((dailyDebt + todayBillSpentUpToSlot) * 100) / 100,
         debtCost: Math.round(dailyDebt * 100) / 100,
         debtProgress: dProgress,
         savingsProgress: 0,
@@ -107,46 +166,46 @@ export function generateTrendData(
     });
   }
 
-  // 2. 天维度：本月 1 号 ~ 今天每日统计（分母 = 当月生效总月供，分子 = 本月 1 号起累计已赚收入）
+  // 2. 天维度：本月 1 号 ~ 今天每日统计（工作日才扣当日负债与工薪；休息日 24/7 被动独立计算，不重复摊销）
   if (granularity === 'daily') {
     const points: TrendPoint[] = [];
     const currentYear = now.getFullYear();
     const currentMonthIndex = now.getMonth();
     const todayDayOfMonth = now.getDate();
-    const dailyTxLiving = txTotalExpense > 0 ? txTotalExpense / 30 : 0;
 
     let monthCumIncome = 0;
 
     for (let day = 1; day <= todayDayOfMonth; day++) {
       const d = new Date(currentYear, currentMonthIndex, day);
-      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+      const dayIsWorkday = isChinaWorkday(d, holidayCalendar);
       const isTodayPoint = day === todayDayOfMonth;
-      const dStr = `${currentYear}-${String(currentMonthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dStr = formatLocalYMD(d);
 
-      // 当天生效的负债
       const dayActiveLiabilities = liabilities.filter(l => {
         if ((l.status ?? 'active') !== 'active') return false;
         if (l.startDate && l.startDate > dStr) return false;
         return true;
       });
       const dayMonthlyDebt = dayActiveLiabilities.reduce((acc, curr) => acc + curr.monthlyPayment, 0);
-      const dayDailyDebt = calculateDailyDebtCost(liabilities, workDays, d);
+      const dayDailyDebt = calculateDailyDebtCost(liabilities, workDays, d, holidayCalendar);
 
-      const dayIncome = isTodayPoint
-        ? liveTodayEarned
-        : isWeekend
-          ? incomeMode === 'total'
-            ? monthlyAdditional / 30
-            : 0
-          : effectiveDailyWorkIncome;
+      let dayIncome = 0;
+      if (isTodayPoint) {
+        dayIncome = liveTodayEarned;
+      } else if (incomeMode === 'main') {
+        dayIncome = dayIsWorkday ? dailyMainIncome : 0;
+      } else {
+        const workPart = dayIsWorkday ? dailyMainIncome + dailyScheduledAdditional : 0;
+        const oneTimePart = oneTimeByDate.get(dStr) ?? 0;
+        dayIncome = workPart + dailyPassiveAdditional + oneTimePart;
+      }
 
       monthCumIncome += dayIncome;
 
-      // 日均应还负债恒定（不再随周末归零）
       const dayDebtCost = dayDailyDebt;
-      const dayExpense = dayDebtCost + dailyTxLiving;
+      const dayTxExpense = txExpenseByDay.get(dStr) ?? 0;
+      const dayExpense = dayDebtCost + dayTxExpense;
 
-      // 未到负债起始日或无有效负债时为 0%，避免未计债日期误显 100%
       const dProgress =
         dayMonthlyDebt > 0
           ? Math.round(Math.min(100, (monthCumIncome / dayMonthlyDebt) * 100) * 10) / 10
@@ -176,7 +235,6 @@ export function generateTrendData(
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
-  // 计算某一月份生效的负债月供
   const getMonthlyDebtAtMonth = (year: number, month: number): number => {
     const monthStr = `${year}-${String(month).padStart(2, '0')}`;
     return liabilities
@@ -188,28 +246,34 @@ export function generateTrendData(
       .reduce((sum, l) => sum + l.monthlyPayment, 0);
   };
 
-  // 全年各月份负债总和
   let annualDebtTotal = 0;
   for (let m = 1; m <= 12; m++) {
     annualDebtTotal += getMonthlyDebtAtMonth(currentYear, m);
   }
 
-  // 计算当月截至今天已赚
-  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   let workdaysPassedThisMonth = 0;
-  for (let d = new Date(currentMonthStart); d < new Date(now.getFullYear(), now.getMonth(), now.getDate()); d = new Date(d.getTime() + 86400000)) {
-    if (d.getDay() !== 0 && d.getDay() !== 6) {
+  let calendarDaysPassedThisMonth = 0;
+  for (let day = 1; day < now.getDate(); day++) {
+    const d = new Date(currentYear, now.getMonth(), day);
+    calendarDaysPassedThisMonth++;
+    if (isChinaWorkday(d, holidayCalendar)) {
       workdaysPassedThisMonth++;
     }
   }
-  const earnedThisMonthSoFar =
-    workdaysPassedThisMonth * effectiveDailyWorkIncome + liveTodayEarned;
+  const pastWorkThisMonth =
+    incomeMode === 'main'
+      ? workdaysPassedThisMonth * dailyMainIncome
+      : workdaysPassedThisMonth * (dailyMainIncome + dailyScheduledAdditional) +
+        calendarDaysPassedThisMonth * dailyPassiveAdditional;
+  const earnedThisMonthSoFar = pastWorkThisMonth + liveTodayEarned;
 
   for (let m = 1; m <= 12; m++) {
     const monthDebt = getMonthlyDebtAtMonth(currentYear, m);
-    const monthlyTotalExpense = monthDebt + txTotalExpense;
+    const monthKey = `${currentYear}-${String(m).padStart(2, '0')}`;
+    const monthTxExpense = txExpenseByMonth.get(monthKey) ?? 0;
+    const monthlyTotalExpense = monthDebt + monthTxExpense;
+    const monthBonus = incomeMode === 'total' ? (oneTimeByMonth.get(monthKey) ?? 0) : 0;
 
-    // 截至第 m 个月的年内累计已赚收入（过去月份按整月计，当前月按实时累计，未来月份按预计累进）
     let cumYearIncome = 0;
     if (m < currentMonth) {
       cumYearIncome = m * effectiveMonthlyIncome;
@@ -227,7 +291,7 @@ export function generateTrendData(
 
     points.push({
       label: `${m}月`,
-      income: Math.round(effectiveMonthlyIncome),
+      income: Math.round(effectiveMonthlyIncome + monthBonus),
       expense: Math.round(monthlyTotalExpense),
       debtCost: Math.round(monthDebt),
       debtProgress: dProgress,

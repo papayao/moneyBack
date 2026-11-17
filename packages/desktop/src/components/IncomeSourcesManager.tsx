@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { IncomeSource } from '@salary-ticker/core';
+import { IncomeSource } from '@moneyback/core';
 import {
   Plus,
   Trash2,
@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Clock,
 } from 'lucide-react';
+import { AppTimeInput } from './ui/AstryxDateTime';
 
 interface IncomeSourcesManagerProps {
   incomeSources: IncomeSource[];
@@ -266,20 +267,18 @@ export const IncomeSourcesManager: React.FC<IncomeSourcesManagerProps> = ({
                 </div>
                 <div>
                   <label className="block text-[11px] text-zinc-500 mb-0.5">上班时间</label>
-                  <input
-                    type="time"
+                  <AppTimeInput
+                    label="上班时间"
                     value={newWorkStartTime}
-                    onChange={e => setNewWorkStartTime(e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-300 rounded-sm px-2 py-1 text-xs text-zinc-900 font-mono focus:outline-none focus:border-zinc-500"
+                    onChange={setNewWorkStartTime}
                   />
                 </div>
                 <div>
                   <label className="block text-[11px] text-zinc-500 mb-0.5">下班时间</label>
-                  <input
-                    type="time"
+                  <AppTimeInput
+                    label="下班时间"
                     value={newWorkEndTime}
-                    onChange={e => setNewWorkEndTime(e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-300 rounded-sm px-2 py-1 text-xs text-zinc-900 font-mono focus:outline-none focus:border-zinc-500"
+                    onChange={setNewWorkEndTime}
                   />
                 </div>
               </div>

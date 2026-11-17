@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { TickerSnapshot, UserProfile } from '@salary-ticker/core';
+import { TickerSnapshot, UserProfile } from '@moneyback/core';
 import { RollingNumber } from './RollingNumber';
 import { RpgBackgroundCanvas } from './RpgBackgroundCanvas';
+import { SkyWeatherControl } from './SkyWeatherControl';
+import { SkyWeatherState } from '../hooks/useSkyWeather';
 import { Minimize2, Eye, EyeOff, Gamepad2, Bot } from 'lucide-react';
 
 interface FocusViewProps {
@@ -10,6 +12,7 @@ interface FocusViewProps {
   isPrivacyMode: boolean;
   onTogglePrivacy: () => void;
   onExitFocus: () => void;
+  skyWeather: SkyWeatherState;
 }
 
 export const FocusView: React.FC<FocusViewProps> = ({
@@ -17,8 +20,10 @@ export const FocusView: React.FC<FocusViewProps> = ({
   isPrivacyMode,
   onTogglePrivacy,
   onExitFocus,
+  skyWeather,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isSkyMenuOpen, setIsSkyMenuOpen] = useState(false);
   const [rpgStats, setRpgStats] = useState({
     kills: 0,
     combo: 0,
@@ -26,17 +31,24 @@ export const FocusView: React.FC<FocusViewProps> = ({
     exp: 0,
   });
 
-  // Intercept Escape key: if in manual play mode, return to Auto-Idle first
+  // Intercept Escape key: close sky menu or exit manual play mode before exiting focus
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isPlaying) {
-        e.stopPropagation();
-        setIsPlaying(false);
+      if (e.key === 'Escape') {
+        if (isSkyMenuOpen) {
+          e.stopPropagation();
+          setIsSkyMenuOpen(false);
+          return;
+        }
+        if (isPlaying) {
+          e.stopPropagation();
+          setIsPlaying(false);
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [isPlaying]);
+  }, [isPlaying, isSkyMenuOpen]);
 
   // 专注模式严格锁定主要工薪净收入（主要工薪 - 今日负债），排除被动/额外多元现金流
   const currentNet = snapshot.mainLaborEarnedToday - snapshot.dailyDebtCost;
@@ -60,10 +72,20 @@ export const FocusView: React.FC<FocusViewProps> = ({
         isWorkingTime={snapshot.isWorkingTime}
         onActivatePlay={() => setIsPlaying(true)}
         onStatsChange={setRpgStats}
+        weatherCategory={skyWeather.activeWeather}
+        isStorm={skyWeather.activeIsStorm}
+        timeOverrideHour={skyWeather.activeHourOverride}
       />
 
       {/* Top-Right Control Bar */}
       <div className="fixed top-5 right-6 z-20 flex items-center gap-2">
+        <SkyWeatherControl
+          skyWeather={skyWeather}
+          variant="floating"
+          isOpen={isSkyMenuOpen}
+          onOpenChange={setIsSkyMenuOpen}
+        />
+
         <button
           onClick={() => setIsPlaying(!isPlaying)}
           title={isPlaying ? '切回自动挂机' : '接管横版操控'}
@@ -157,9 +179,9 @@ export const FocusView: React.FC<FocusViewProps> = ({
                 : 'justify-center gap-3 text-xs sm:text-sm mt-4'
             }`}
           >
-            <span>¥{hourlyRate}/时</span>
+            <span>{isPrivacyMode ? '****' : `¥${hourlyRate}/时`}</span>
             <span className="text-zinc-300">·</span>
-            <span>+¥{perSecond}/秒</span>
+            <span>{isPrivacyMode ? '****' : `+¥${perSecond}/秒`}</span>
             {rpgStats.combo > 1 && (
               <>
                 <span className="text-zinc-300">·</span>
@@ -207,7 +229,7 @@ export const FocusView: React.FC<FocusViewProps> = ({
           </div>
         ) : (
           <div className="px-3 py-1 bg-white/75 text-zinc-600 text-xs font-mono rounded-sm border border-zinc-200/80 backdrop-blur-md shadow-2xs">
-            <strong className="text-zinc-900">点击背景任意处</strong> 
+            <strong className="text-zinc-900">点击背景任意处</strong> · 进入手动操控
           </div>
         )}
       </div>

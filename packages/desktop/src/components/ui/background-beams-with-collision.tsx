@@ -5,6 +5,7 @@ interface BackgroundBeamsProps {
   children?: React.ReactNode;
   className?: string;
   isPositive?: boolean;
+  bordered?: boolean;
 }
 
 interface BeamConfig {
@@ -57,6 +58,7 @@ export const BackgroundBeamsWithCollision: React.FC<BackgroundBeamsProps> = ({
   children,
   className = '',
   isPositive = true,
+  bordered = true,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -83,7 +85,9 @@ export const BackgroundBeamsWithCollision: React.FC<BackgroundBeamsProps> = ({
   return (
     <div
       ref={parentRef}
-      className={`relative flex items-center w-full justify-center overflow-hidden rounded-md border border-zinc-200/90 bg-white shadow-xs ${className}`}
+      className={`relative flex items-center w-full justify-center overflow-hidden rounded-md ${
+        bordered ? 'border border-zinc-200/90 bg-white shadow-xs' : 'bg-transparent'
+      } ${className}`}
     >
       {/* Ambient Floating $ Symbols with Yellow/Orange Gradient */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
@@ -135,8 +139,8 @@ export const BackgroundBeamsWithCollision: React.FC<BackgroundBeamsProps> = ({
 
 const CollisionMechanism: React.FC<{
   beamOptions: BeamConfig;
-  containerRef: React.RefObject<HTMLDivElement>;
-  parentRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  parentRef: React.RefObject<HTMLDivElement | null>;
   isPositive: boolean;
 }> = ({ beamOptions, containerRef, parentRef, isPositive }) => {
   const [beamKey, setBeamKey] = useState(0);

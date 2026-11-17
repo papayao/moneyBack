@@ -5,8 +5,9 @@ import {
   Transaction,
   IncomeSource,
   calculateTickerSnapshot,
+  normalizeBillTransaction,
   TickerSnapshot,
-} from '@salary-ticker/core';
+} from '@moneyback/core';
 import { Header } from './components/Header';
 import { TickerWidget } from './components/TickerWidget';
 import { TrendChartCard } from './components/TrendChartCard';
@@ -16,6 +17,13 @@ import { ProfileModal } from './components/ProfileModal';
 import { MiniFloatWindow } from './components/MiniFloatWindow';
 import { FocusView } from './components/FocusView';
 import { PiggyBankWidget } from './components/PiggyBankWidget';
+import { DynamicSkyBackdrop } from './components/DynamicSkyBackdrop';
+import { BillAnalysisCard } from './components/BillAnalysisCard';
+import { useSkyWeather } from './hooks/useSkyWeather';
+import { useHolidayCalendar } from './hooks/useHolidayCalendar';
+import { Collapsible, CollapsibleGroup } from '@astryxdesign/core/Collapsible';
+import { Card } from '@astryxdesign/core/Card';
+import { Wallet, ShieldAlert, LineChart, Receipt } from 'lucide-react';
 
 const DEFAULT_PROFILE: UserProfile = {
   monthlySalary: 20000,
@@ -91,26 +99,35 @@ const DEFAULT_INCOME_SOURCES: IncomeSource[] = [
   },
 ];
 
+function loadJsonFromStorage<T>(key: string, fallback: T): T {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? (JSON.parse(saved) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function cleanTransaction(tx: Transaction): Transaction {
+  return normalizeBillTransaction(tx);
+}
+
 export function App() {
-  const [profile, setProfile] = useState<UserProfile>(() => {
-    const saved = localStorage.getItem('salary_ticker_profile');
-    return saved ? JSON.parse(saved) : DEFAULT_PROFILE;
-  });
+  const [profile, setProfile] = useState<UserProfile>(() =>
+    loadJsonFromStorage('salary_ticker_profile', DEFAULT_PROFILE)
+  );
 
-  const [liabilities, setLiabilities] = useState<Liability[]>(() => {
-    const saved = localStorage.getItem('salary_ticker_liabilities');
-    return saved ? JSON.parse(saved) : DEFAULT_LIABILITIES;
-  });
+  const [liabilities, setLiabilities] = useState<Liability[]>(() =>
+    loadJsonFromStorage('salary_ticker_liabilities', DEFAULT_LIABILITIES)
+  );
 
-  const [incomeSources, setIncomeSources] = useState<IncomeSource[]>(() => {
-    const saved = localStorage.getItem('salary_ticker_income_sources');
-    return saved ? JSON.parse(saved) : DEFAULT_INCOME_SOURCES;
-  });
+  const [incomeSources, setIncomeSources] = useState<IncomeSource[]>(() =>
+    loadJsonFromStorage('salary_ticker_income_sources', DEFAULT_INCOME_SOURCES)
+  );
 
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem('salary_ticker_txs');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [transactions, setTransactions] = useState<Transaction[]>(() =>
+    loadJsonFromStorage<Transaction[]>('salary_ticker_txs', []).map(cleanTransaction)
+  );
 
   const [isPrivacyMode, setIsPrivacyMode] = useState(false);
   const [isMiniMode, setIsMiniMode] = useState(false);
@@ -118,10 +135,12 @@ export function App() {
   const [incomeDisplayMode, setIncomeDisplayMode] = useState<'main' | 'total'>('main');
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const skyWeather = useSkyWeather();
+  const holidayCalendar = useHolidayCalendar();
 
   // Live snapshot calculation
   const [snapshot, setSnapshot] = useState<TickerSnapshot>(() =>
-    calculateTickerSnapshot(profile, liabilities, new Date(), transactions, incomeSources)
+    calculateTickerSnapshot(profile, liabilities, new Date(), transactions, incomeSources, holidayCalendar)
   );
 
   useEffect(() => {
@@ -153,12 +172,14 @@ export function App() {
 
   useEffect(() => {
     const update = () => {
-      setSnapshot(calculateTickerSnapshot(profile, liabilities, new Date(), transactions, incomeSources));
+      setSnapshot(
+        calculateTickerSnapshot(profile, liabilities, new Date(), transactions, incomeSources, holidayCalendar)
+      );
     };
     update();
     const timer = setInterval(update, 200);
     return () => clearInterval(timer);
-  }, [profile, liabilities, transactions, incomeSources]);
+  }, [profile, liabilities, transactions, incomeSources, holidayCalendar]);
 
   const handleAddLiability = (item: Liability) => {
     setLiabilities(prev => [item, ...prev]);
@@ -193,8 +214,47 @@ export function App() {
     );
   };
 
+  const handleToggleExcludeTransaction = (idxInState: number) => {
+    setTransactions(prev =>
+      prev.map((tx, idx) => {
+        if (idx !== idxInState) return tx;
+        const normalized = normalizeBillTransaction(tx);
+        if (normalized.isRefundOffset) return tx;
+        if (normalized.type === 'repay') {
+          const restored =
+            normalized.originalType && normalized.originalType !== 'repay'
+              ? normalized.originalType
+              : 'expense';
+          return {
+            ...normalized,
+            type: restored,
+            userOverrideType: true,
+          };
+        }
+        return {
+          ...normalized,
+          originalType: normalized.type,
+          type: 'repay',
+          userOverrideType: true,
+        };
+      })
+    );
+  };
+
   const handleImportTransactions = (newTxs: Transaction[]) => {
-    setTransactions(prev => [...newTxs, ...prev]);
+    setTransactions(prev => {
+      const normalizedPrev = prev.map(cleanTransaction);
+      const seen = new Set(
+        normalizedPrev.map(t => `${t.source}|${t.tradeTime}|${t.amount}|${t.type}|${t.remark || ''}`)
+      );
+      const uniqueNew = newTxs.map(cleanTransaction).filter(t => {
+        const key = `${t.source}|${t.tradeTime}|${t.amount}|${t.type}|${t.remark || ''}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      return [...uniqueNew, ...normalizedPrev];
+    });
   };
 
   if (isFocusMode) {
@@ -205,6 +265,7 @@ export function App() {
         isPrivacyMode={isPrivacyMode}
         onTogglePrivacy={() => setIsPrivacyMode(!isPrivacyMode)}
         onExitFocus={() => setIsFocusMode(false)}
+        skyWeather={skyWeather}
       />
     );
   }
@@ -223,7 +284,12 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-100/60 text-zinc-900 flex flex-col font-sans">
+    <div className="relative min-h-screen text-zinc-900 flex flex-col font-sans">
+      <DynamicSkyBackdrop
+        weatherCategory={skyWeather.activeWeather}
+        isStorm={skyWeather.activeIsStorm}
+        timeOverrideHour={skyWeather.activeHourOverride}
+      />
       <Header
         snapshot={snapshot}
         onOpenProfile={() => setIsProfileOpen(true)}
@@ -232,72 +298,152 @@ export function App() {
         onTogglePrivacy={() => setIsPrivacyMode(!isPrivacyMode)}
         isMiniMode={isMiniMode}
         onToggleMini={() => setIsMiniMode(true)}
+        skyWeather={skyWeather}
       />
 
-      <main className="flex-1 max-w-3xl w-full mx-auto p-4 md:p-6 space-y-5">
-        {/* Live Ticker, Multi-Stream Income & Savings Target (工薪与额外收入合并单元) */}
-        <TickerWidget
-          snapshot={snapshot}
-          profile={profile}
-          isPrivacyMode={isPrivacyMode}
-          onUpdateProfile={setProfile}
-          incomeSources={incomeSources}
-          onAddIncomeSource={handleAddIncomeSource}
-          onRemoveIncomeSource={handleRemoveIncomeSource}
-          onInjectWindfall={handleInjectWindfall}
-          onToggleFocus={() => setIsFocusMode(true)}
-          incomeDisplayMode={incomeDisplayMode}
-          onChangeIncomeDisplayMode={setIncomeDisplayMode}
-        />
-
-        {/* Unified Debt Manager & Live Payoff Tracker (负债记录进度条与清单合并单元) */}
-        <LiabilitiesManager
-          liabilities={liabilities}
-          snapshot={snapshot}
-          onAddLiability={handleAddLiability}
-          onRemoveLiability={handleRemoveLiability}
-          isPrivacyMode={isPrivacyMode}
-        />
-
-        {/* Trend Line Chart (按天、月、小时观测收入、支出、负债进度) */}
-        <TrendChartCard
-          profile={profile}
-          liabilities={liabilities}
-          incomeSources={incomeSources}
-          transactions={transactions}
-          isPrivacyMode={isPrivacyMode}
-          incomeDisplayMode={incomeDisplayMode}
-        />
-
-        {/* Recent Transactions / Bills Summary */}
-        {transactions.length > 0 && (
-          <div className="border border-zinc-200/90 bg-white p-4 rounded-md shadow-2xs">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-zinc-900">账单流水 ({transactions.length})</h3>
-              <button
-                onClick={() => setTransactions([])}
-                className="text-xs text-zinc-500 hover:text-rose-600 transition"
-              >
-                清空
-              </button>
-            </div>
-            <div className="divide-y divide-zinc-100 max-h-48 overflow-y-auto font-mono text-xs">
-              {transactions.slice(0, 10).map((tx, idx) => (
-                <div key={idx} className="py-2 flex items-center justify-between text-zinc-800">
-                  <div className="truncate max-w-sm">
-                    <span className="text-[10px] text-zinc-500 mr-2 bg-zinc-100 px-1 py-0.5 rounded-sm border border-zinc-200">
-                      {tx.source}
+      <main className="relative z-10 flex-1 max-w-3xl w-full mx-auto p-4 pb-24 md:p-6 md:pb-24">
+        <CollapsibleGroup
+          type="multiple"
+          defaultValue={['ticker', 'liabilities', 'trend', 'bills']}
+          chevronPosition="end"
+        >
+          <div className="space-y-4">
+            {/* 1. Live Ticker, Multi-Stream Income & Savings Target */}
+            <Card
+              padding={4}
+              className="bg-white border border-zinc-200/90 rounded-md shadow-2xs"
+              style={{ overflow: 'visible' }}
+            >
+              <Collapsible
+                value="ticker"
+                trigger={
+                  <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
+                    <Wallet className="w-4 h-4 text-zinc-700" />
+                    <span>实时薪资与今日收支</span>
+                    <span className="text-[11px] font-mono font-normal text-zinc-500">
+                      {isPrivacyMode
+                        ? '****'
+                        : `¥${snapshot.salaryPerHour}/时`}
                     </span>
-                    <span>{tx.remark || tx.category}</span>
                   </div>
-                  <span className={tx.type === 'income' ? 'text-emerald-600 font-semibold' : 'text-zinc-900'}>
-                    {tx.type === 'income' ? `+¥${tx.amount.toFixed(2)}` : `-¥${tx.amount.toFixed(2)}`}
-                  </span>
+                }
+              >
+                <div className="pt-2.5">
+                  <TickerWidget
+                    snapshot={snapshot}
+                    profile={profile}
+                    isPrivacyMode={isPrivacyMode}
+                    onUpdateProfile={setProfile}
+                    incomeSources={incomeSources}
+                    onAddIncomeSource={handleAddIncomeSource}
+                    onRemoveIncomeSource={handleRemoveIncomeSource}
+                    onInjectWindfall={handleInjectWindfall}
+                    onToggleFocus={() => setIsFocusMode(true)}
+                    incomeDisplayMode={incomeDisplayMode}
+                    onChangeIncomeDisplayMode={setIncomeDisplayMode}
+                  />
                 </div>
-              ))}
-            </div>
+              </Collapsible>
+            </Card>
+
+            {/* 2. Unified Debt Manager & Live Payoff Tracker */}
+            <Card
+              padding={4}
+              className="bg-white border border-zinc-200/90 rounded-md shadow-2xs"
+              style={{ overflow: 'visible' }}
+            >
+              <Collapsible
+                value="liabilities"
+                trigger={
+                  <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
+                    <ShieldAlert className="w-4 h-4 text-rose-600" />
+                    <span>负债管理与还贷进度</span>
+                    <span className="text-[11px] font-mono font-normal text-zinc-500">
+                      {liabilities.length} 笔
+                    </span>
+                  </div>
+                }
+              >
+                <div className="pt-2.5">
+                  <LiabilitiesManager
+                    liabilities={liabilities}
+                    snapshot={snapshot}
+                    profile={profile}
+                    onAddLiability={handleAddLiability}
+                    onRemoveLiability={handleRemoveLiability}
+                    isPrivacyMode={isPrivacyMode}
+                  />
+                </div>
+              </Collapsible>
+            </Card>
+
+            {/* 3. Trend Line Chart */}
+            <Card
+              padding={4}
+              className="bg-white border border-zinc-200/90 rounded-md shadow-2xs"
+              style={{ overflow: 'visible' }}
+            >
+              <Collapsible
+                value="trend"
+                trigger={
+                  <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
+                    <LineChart className="w-4 h-4 text-zinc-700" />
+                    <span>{incomeDisplayMode === 'main' ? '主要收支与还贷趋势' : '综合收支与还贷趋势'}</span>
+                  </div>
+                }
+              >
+                <div className="pt-2.5">
+                  <TrendChartCard
+                    profile={profile}
+                    liabilities={liabilities}
+                    incomeSources={incomeSources}
+                    transactions={transactions}
+                    isPrivacyMode={isPrivacyMode}
+                    incomeDisplayMode={incomeDisplayMode}
+                    holidayCalendar={holidayCalendar}
+                  />
+                </div>
+              </Collapsible>
+            </Card>
+
+            {/* 4. Linked Income & Bill Expense Analysis */}
+            {transactions.length > 0 && (
+              <Card
+                padding={4}
+                className="bg-white border border-zinc-200/90 rounded-md shadow-2xs"
+                style={{ overflow: 'visible' }}
+              >
+                <Collapsible
+                  value="bills"
+                  trigger={
+                    <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
+                      <Receipt className="w-4 h-4 text-zinc-700" />
+                      <span>账单收支分析</span>
+                      <span className="text-[11px] font-mono font-normal text-zinc-500">
+                        {transactions.length} 笔流水
+                      </span>
+                    </div>
+                  }
+                >
+                  <div className="pt-2.5">
+                    <BillAnalysisCard
+                      transactions={transactions}
+                      profile={profile}
+                      liabilities={liabilities}
+                      incomeSources={incomeSources}
+                      incomeDisplayMode={incomeDisplayMode}
+                      isPrivacyMode={isPrivacyMode}
+                      holidayCalendar={holidayCalendar}
+                      onToggleExcludeTransaction={handleToggleExcludeTransaction}
+                      onOpenImport={() => setIsImportOpen(true)}
+                      onClearTransactions={() => setTransactions([])}
+                    />
+                  </div>
+                </Collapsible>
+              </Card>
+            )}
           </div>
-        )}
+        </CollapsibleGroup>
       </main>
 
       {/* Modals */}

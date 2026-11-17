@@ -1,13 +1,13 @@
 <script>
 export default {
   onLaunch: function () {
-    console.log('SalaryTicker App Launch');
+    console.log('moneyBack App Launch');
   },
   onShow: function () {
-    console.log('SalaryTicker App Show');
+    console.log('moneyBack App Show');
   },
   onHide: function () {
-    console.log('SalaryTicker App Hide');
+    console.log('moneyBack App Hide');
   },
 };
 </script>

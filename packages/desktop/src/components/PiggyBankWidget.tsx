@@ -145,10 +145,13 @@ export const PiggyBankWidget: React.FC<PiggyBankProps> = ({
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
+    const renderScale = Math.min(dpr * 2, 4);
     const width = 160;
     const height = 168;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
+    canvas.width = Math.round(width * renderScale);
+    canvas.height = Math.round(height * renderScale);
+    const scaleX = canvas.width / width;
+    const scaleY = canvas.height / height;
 
     let animationFrameId: number;
 
@@ -224,33 +227,92 @@ export const PiggyBankWidget: React.FC<PiggyBankProps> = ({
       isBackLeg: boolean
     ) => {
       ctx.save();
-      const grad = ctx.createLinearGradient(x1, y1, x1, y2);
-      if (isBackLeg) {
-        grad.addColorStop(0, '#ea580c');
-        grad.addColorStop(1, '#c2410c');
-      } else {
-        grad.addColorStop(0, '#fb923c');
-        grad.addColorStop(0.55, '#f97316');
-        grad.addColorStop(1, '#ea580c');
-      }
-      ctx.fillStyle = grad;
+      const topHalf = bottomWidth * 0.64;
+      const botHalf = bottomWidth * 0.48;
+      const h = y2 - y1;
+      const cornerLift = Math.min(4.5, h * 0.28);
+
       ctx.beginPath();
-      const topHalf = bottomWidth * 0.72;
-      const botHalf = bottomWidth * 0.5;
       ctx.moveTo(x1 - topHalf, y1);
-      ctx.quadraticCurveTo(x1 - botHalf - 2, (y1 + y2) * 0.55, x2 - botHalf, y2 - 4);
-      ctx.quadraticCurveTo(x2 - botHalf, y2, x2, y2);
-      ctx.quadraticCurveTo(x2 + botHalf, y2, x2 + botHalf, y2 - 4);
-      ctx.quadraticCurveTo(x1 + botHalf + 2, (y1 + y2) * 0.55, x1 + topHalf, y1);
+      // Smooth left contour down to ankle (no control point overshoot below y2)
+      ctx.bezierCurveTo(
+        x1 - topHalf * 0.9,
+        y1 + h * 0.36,
+        x2 - botHalf - 0.4,
+        y2 - cornerLift - 3.6,
+        x2 - botHalf,
+        y2 - cornerLift
+      );
+      // Smooth rounded bottom-left hoof into sole center
+      ctx.bezierCurveTo(
+        x2 - botHalf + 0.3,
+        y2 - cornerLift * 0.28,
+        x2 - botHalf * 0.45,
+        y2,
+        x2,
+        y2
+      );
+      // Smooth rounded sole center into bottom-right hoof
+      ctx.bezierCurveTo(
+        x2 + botHalf * 0.45,
+        y2,
+        x2 + botHalf - 0.3,
+        y2 - cornerLift * 0.28,
+        x2 + botHalf,
+        y2 - cornerLift
+      );
+      // Smooth right contour back up into belly
+      ctx.bezierCurveTo(
+        x2 + botHalf + 0.4,
+        y2 - cornerLift - 3.6,
+        x1 + topHalf * 0.9,
+        y1 + h * 0.36,
+        x1 + topHalf,
+        y1
+      );
       ctx.closePath();
-      ctx.fill();
+
+      if (isBackLeg) {
+        const grad = ctx.createLinearGradient(x1 - topHalf, y1, x2 + botHalf, y2);
+        grad.addColorStop(0, '#f97316');
+        grad.addColorStop(0.45, '#ea580c');
+        grad.addColorStop(1, '#c2410c');
+        ctx.fillStyle = grad;
+        ctx.fill();
+      } else {
+        // 3D cylindrical golden-amber shading matching the lower belly
+        const grad = ctx.createLinearGradient(x1 - topHalf, y1, x2 + botHalf, y2);
+        grad.addColorStop(0, '#fbbf24');
+        grad.addColorStop(0.28, '#fb923c');
+        grad.addColorStop(0.68, '#f97316');
+        grad.addColorStop(1, '#ea580c');
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Soft warm rim light along left curvature + belly AO crease at top
+        ctx.save();
+        ctx.clip();
+        const highlightGrad = ctx.createLinearGradient(x2 - botHalf, y1, x2 + botHalf * 0.3, y1);
+        highlightGrad.addColorStop(0, 'rgba(254, 240, 138, 0.32)');
+        highlightGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+        ctx.fillStyle = highlightGrad;
+        ctx.fillRect(x2 - botHalf - 4, y1, bottomWidth + 8, h + 2);
+
+        const bellyShadowGrad = ctx.createLinearGradient(x1, y1, x1, y1 + h * 0.55);
+        bellyShadowGrad.addColorStop(0, 'rgba(194, 65, 12, 0.32)');
+        bellyShadowGrad.addColorStop(1, 'rgba(194, 65, 12, 0)');
+        ctx.fillStyle = bellyShadowGrad;
+        ctx.fillRect(x1 - topHalf - 2, y1, topHalf * 2 + 4, h * 0.55);
+        ctx.restore();
+      }
+
       ctx.restore();
     };
 
     const render = () => {
       const s = animState.current;
       ctx.save();
-      ctx.scale(dpr, dpr);
+      ctx.scale(scaleX, scaleY);
       ctx.clearRect(0, 0, width, height);
 
       // Update idle breathing & spring physics
@@ -298,9 +360,9 @@ export const PiggyBankWidget: React.FC<PiggyBankProps> = ({
       ctx.scale(s.squashX, s.squashY);
       ctx.translate(-pigCenterX, -pigBottomY);
 
-      // 2. Back Legs (far-left front leg & inner-back leg, darker orange for 3D depth)
-      drawLeg(58, 130, 60, 148, 16, true);
-      drawLeg(88, 132, 88, 147, 14, true);
+      // 2. Back Legs (far-front leg & far-back leg, tucked cleanly under chest/belly for 3D depth)
+      drawLeg(62, 135, 60, 148.5, 13.5, true);
+      drawLeg(92, 134, 91, 148, 13.5, true);
 
       // 3. Far Left Ear (sticking out on top-left of head, matching reference)
       ctx.save();
@@ -355,9 +417,9 @@ export const PiggyBankWidget: React.FC<PiggyBankProps> = ({
       ctx.stroke();
       ctx.restore();
 
-      // 5. Foreground Legs (near-front leg & near-back leg, seamlessly joined to belly)
-      drawLeg(73, 132, 74, 152, 18, false);
-      drawLeg(100, 131, 100, 151, 18, false);
+      // 5. Foreground Legs (near-front leg & near-back leg, smoothly grounded beneath belly)
+      drawLeg(72, 133, 72, 152, 16.5, false);
+      drawLeg(103, 132, 104, 151, 17, false);
 
       // 6. Main 3D Golden Piggy Body (plump 3/4 ellipsoid with multi-stop 3D shading)
       ctx.save();

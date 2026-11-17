@@ -1,5 +1,5 @@
 import React from 'react';
-import { TickerSnapshot } from '@salary-ticker/core';
+import { TickerSnapshot } from '@moneyback/core';
 import { Maximize2, Eye, EyeOff } from 'lucide-react';
 import { RollingNumber } from './RollingNumber';
 

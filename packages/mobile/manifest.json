@@ -1,6 +1,6 @@
 {
-  "name": "SalaryTicker",
-  "appid": "__UNI__SALARYTICKER",
+  "name": "moneyBack",
+  "appid": "__UNI__MONEYBACK",
   "description": "打工人实时资产与负债对冲时钟",
   "versionName": "1.0.0",
   "versionCode": "100",
@@ -19,7 +19,7 @@
   },
   "quickapp": {},
   "h5": {
-    "title": "SalaryTicker",
+    "title": "moneyBack",
     "router": {
       "mode": "hash"
     }
